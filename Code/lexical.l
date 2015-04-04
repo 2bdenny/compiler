@@ -9,12 +9,16 @@
 delim	[ \t\n]
 ws	{delim}+
 letter	[A-Za-z]
-digit	[0-9]
+digit8	[0-7]
+digit10	[0-9]
+digit16	[0-9A-Fa-f]
+int8	(-)?0(digit8)+
+int10	(-)?(0)|([1-9]digit10*)
+int16	(-)?0xdigit16+
 id	{letter}({letter}|{digit})*
-number	{digit}+(\.{digit}+)?(E[+-]?{digit}+)?
+float	{digit}+(\.{digit}+)?(E[+-]?{digit}+)?
 
 %%
-
 {ws}	{/*no action and no return*/}
 if	{return(IF);}
 then	{return(THEN);}
@@ -31,10 +35,12 @@ else	{return(ELSE);}
 %%
 
 int installID() {
+	printf("%s\n", yytext);
 	return 0;
 }
 
 int installNum() {
+	printf("%s\n", yytext);
 	return 0;
 }
 
