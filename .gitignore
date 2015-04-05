@@ -29,8 +29,9 @@
 *.hex
 
 # others
-*.yy.c
 parser
-*.tab.c
+scanner
 *.output
-*.tab.h
+*.cmm
+*.chm
+

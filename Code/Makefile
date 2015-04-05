@@ -8,7 +8,7 @@ BISON = bison
 CFLAGS = -std=c99
 
 # 编译目标：src目录下的所有.c文件
-CFILES = $(shell find ./ -name "*.c")
+CFILES = $(shell find ./ -name "*.yy.c")
 OBJS = $(CFILES:.c=.o)
 LFILE = $(shell find ./ -name "*.l")
 YFILE = $(shell find ./ -name "*.y")
