@@ -3,27 +3,113 @@
 #include "lex.yy.c"
 %}
 
-%token DIGIT
+/* declared types */
+%union {
+	int type_int;
+	float type_float;
+	double type_double;
+}
 
+%token <type_int> INT
+%token <type_float> FLOAT
+%token ID
+%token SEMI COMMA DOT
+%token ASSIGNOP RELOP
+%token PLUS MINUS DIV STAR
+%token AND OR NOT
+%token TYPE
+%token LP RP LB RB LC RC
+%token STRUCT RETURN IF ELSE WHILE
+
+%left ASSIGNOP
+%left OR
+%left AND
+%left RELOP
+%left PLUS MINUS
+%left STAR DIV
+%right MINUS NOT
+%left LP RP LB RB DOT
 %%
-line	: expr '\n'	{printf("%d\n", $1);}
-	;
-expr	: expr '+' term	{$$ = $1 + $3;}
-	| term
-	;
-term	: term '*' factor	{$$ = $1*$3;}
-	| factor
-	;
-factor	: '(' expr ')'	{$$ = $2;}
-	| DIGIT
-	;
+Program		: ExtDefList		/*High-level Definitions*/
+		;
+ExtDefList	: /* empty */
+		| ExtDef ExtDefList	
+		;
+ExtDef		: Specifier ExtDecList SEMI
+		| Specifier SEMI
+		| Specifier FunDec CompSt
+		;
+ExtDecList	: VarDec
+		| VarDec COMMA ExtDecList
+		;
+
+Specifier	: TYPE			/*Specifiers*/
+		| StructSpecifier
+StructSpecifier	: STRUCT OptTag LC DefList RC
+		| STRUCT Tag
+		;
+OptTag		: /* empty */
+		| ID
+		;
+Tag		: ID
+		;
+
+VarDec		: ID			/*Declarators*/
+		| VarDec LB INT RB
+		;
+FunDec		: ID LP VarList RP
+		| ID LP RP
+		;
+VarList		: ParamDec COMMA VarList
+		| ParamDec
+		;
+
+ComptSt		: LC DefList StmtList RC/*Statements*/
+		;
+StmtList	: /* empty */
+		| Stmt StmtList
+Stmt		: Exp SEMI
+		| CompSt
+		| RETURN Exp SEMI
+		| IF LP Exp RP Stmt
+		| IF LP Exp RP Stmt ELSE Stmt
+		| WHILE LP Exp RP Stmt
+		;
+
+DefList		: /* empty */		/*Local Definitions*/
+		| Def DefList
+		;
+Def		: Specifier DecList SEMI
+		;
+DecList		: Dec
+		| Dec COMMA DecList
+		;
+Dec		: VarDec
+		| VarDec ASSIGNOP Exp
+		;
+
+Exp		: Exp ASSIGNOP Exp	/*Expressions*/
+		| Exp AND Exp
+		| Exp OR Exp
+		| Exp RELOP Exp
+		| Exp PLUS Exp
+		| Exp MINUS Exp
+		| Exp STAR Exp
+		| Exp DIV Exp
+		| LP Exp RP
+		| MINUS Exp
+		| NOT Exp
+		| ID LP Args RP
+		| Exp LB Exp RB
+		| Exp DOT ID
+		| ID
+		| INT
+		| FLOAT
+		;
+Args		: Exp COMMA Args
+		| Exp
+		;
 %%
-yylex() {
-	int c;
-	c = getchar();
-	if (isdigit(c)){
-		yylval = c-'0';
-		return DIGIT;
-	}
-	return c;
+yyerror(char *msg){
+	fprintf(stderr, "error: %s\n", msg);
 }

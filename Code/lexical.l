@@ -1,11 +1,18 @@
 %option yylineno
+
 %{
-#include "syntax.tab.h"
+	#include "syntax.tab.h"
+	int yycolumn = 1;
+	#define YY_USER_ACTION
+		yylloc.first_line = yylloc.last_line = yylineno; \
+		yylloc.first_column = yycolumn; \
+		yylloc.last_column = yycolumn + yyleng-1; \
+		yycolumn += yyleng;
 %}
 /* regex */
 delim	[ \t\n]
 ws	{delim}+
-letter	[A-Za-z]
+letter	[A-Za-z_]
 digit8	[0-7]
 digit10	[0-9]
 digit16	[0-9A-Fa-f]
@@ -18,7 +25,6 @@ float	{int10}(\.{digit10}+)?([Ee]{int10})?
 %%
 {ws}	{/*no action and no return*/}
 if	{printf("IF\n"); return IF;}
-then	{printf("THEN\n"); return THEN;}
 else	{printf("ELSE\n"); return ELSE;}
 int	{printf("TYPE\n"); return TYPE;}
 float	{printf("TYPE\n"); return TYPE;}
@@ -53,6 +59,7 @@ while	{printf("WHILE\n"); return WHILE;}
 "<>"	{printf("RELOP\n"); return RELOP;}
 ">"	{printf("RELOP\n"); return RELOP;}
 ">="	{printf("RELOP\n"); return RELOP;}
+\n	{yycolumn = 1;}
 .	{printf("Error type A at Line %d: Mysterious Character \"%s\"\n", yylineno, yytext);}
 
 %%
