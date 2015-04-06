@@ -65,8 +65,9 @@
 #line 1 "./syntax.y" /* yacc.c:339  */
 
 #include <sys/types.h>
+#include "lex.yy.c"
 
-#line 70 "./syntax.tab.c" /* yacc.c:339  */
+#line 71 "./syntax.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -121,7 +122,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 125 "./syntax.tab.c" /* yacc.c:358  */
+#line 126 "./syntax.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -418,7 +419,7 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,     8,     8,    10,    11,    13,    14,    16,    17
+       0,     9,     9,    11,    12,    14,    15,    17,    18
 };
 #endif
 
@@ -1189,31 +1190,31 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 8 "./syntax.y" /* yacc.c:1646  */
+#line 9 "./syntax.y" /* yacc.c:1646  */
     {printf("%d\n", (yyvsp[-1]));}
-#line 1195 "./syntax.tab.c" /* yacc.c:1646  */
+#line 1196 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 10 "./syntax.y" /* yacc.c:1646  */
+#line 11 "./syntax.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-2]) + (yyvsp[0]);}
-#line 1201 "./syntax.tab.c" /* yacc.c:1646  */
+#line 1202 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 13 "./syntax.y" /* yacc.c:1646  */
+#line 14 "./syntax.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-2])*(yyvsp[0]);}
-#line 1207 "./syntax.tab.c" /* yacc.c:1646  */
+#line 1208 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 16 "./syntax.y" /* yacc.c:1646  */
+#line 17 "./syntax.y" /* yacc.c:1646  */
     {(yyval) = (yyvsp[-1]);}
-#line 1213 "./syntax.tab.c" /* yacc.c:1646  */
+#line 1214 "./syntax.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1217 "./syntax.tab.c" /* yacc.c:1646  */
+#line 1218 "./syntax.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1441,7 +1442,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 19 "./syntax.y" /* yacc.c:1906  */
+#line 20 "./syntax.y" /* yacc.c:1906  */
 
 yylex() {
 	int c;

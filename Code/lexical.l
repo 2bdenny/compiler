@@ -27,7 +27,7 @@ return	{printf("RETURN\n"); return RETURN;}
 while	{printf("WHILE\n"); return WHILE;}
 {id}	{printf("ID\n"); return ID;}
 {int8}	{printf("INT\n"); return INT;}
-{int10}	{printf("INT\n"); return INT;}
+{int10}	{printf("INT\n"); yylval = atoi(yytext); return INT;}
 {int16}	{printf("INT\n"); return INT;}
 {float}	{printf("FLOAT\n"); return FLOAT;}
 ";"	{printf("SEMI\n"); return SEMI;}
