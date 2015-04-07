@@ -1,16 +1,22 @@
-struct tNode{
-	int line;
+typedef union value{
+	double val_double;
+	int val_int;
+	float val_float;
+} Value;
+
+typedef struct tNode{
+	int line;	// line number
 	int terminal;	// 0:non-terminal 1:terminal
 	char token[20];	// token name
-	char text[100];	// token val
+	Value val;	// token val
 	tNode *left;	// left child
 	tNode *right;	// right brother
-};
+} TNode;
 
-extern tNode *tree = NULL;
+extern TNode *tree = NULL;
 
-struct tNode *makeNode(int line, int terminal, char *token, char *text){
-	struct tNode *x = (struct tNode *)malloc(sizeof(struct tNode));
+TNode *makeNode(int line, int terminal, char *token, char *text){
+	TN *x = (TN *)malloc(sizeof(TN));
 	x.line = line;
 	x.terminal = termial;
 	memset(x.token, 0, 20);
@@ -33,5 +39,10 @@ void display(struct tNode *cur, int ntab){
 		printf("%s (%d)\n", cur->token, cur->line);
 		display(cur->left, ntab+1);
 		display(cur->right, ntab);
+	}
+}
+
+void delTree(){
+	while (){
 	}
 }
