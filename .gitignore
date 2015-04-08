@@ -34,4 +34,4 @@ scanner
 *.output
 *.cmm
 *.chm
-
+*.swp

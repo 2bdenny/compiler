@@ -3,11 +3,12 @@
 	#include "syntax.tab.h"
 	#include "GrammarTree.h"
 	int yycolumn = 1;
-	#define YY_USER_ACTION
+/*	#define YY_USER_ACTION
 		yylloc.first_line = yylloc.last_line = yylineno; \
 		yylloc.first_column = yycolumn; \
 		yylloc.last_column = yycolumn + yyleng-1; \
 		yycolumn += yyleng;
+		*/
 %}
 /* regex */
 nl	\n
@@ -135,7 +136,7 @@ void plantSYMBOL(char *syb){
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->valno = -1;
-	tmp->ternimal = 1;
+	tmp->terminal = 1;
 	memset(tmp->token, 0, 20);
 	memset(tmp->val.val_name, 0, 32);
 	memcpy(tmp->token, syb, strlen(syb));
@@ -149,7 +150,7 @@ void plantRELOP(){
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->valno = 3;
-	tmp->ternimal = 1;
+	tmp->terminal = 1;
 	memset(tmp->token, 0, 20);
 	memset(tmp->val.val_name, 0, 32);
 	memcpy(tmp->token, "RELOP", 5);
