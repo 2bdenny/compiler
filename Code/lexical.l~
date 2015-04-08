@@ -3,11 +3,11 @@
 //	#include "syntax.tab.h"
 	#include "GrammarTree.h"
 	int yycolumn = 1;
-/*	#define YY_USER_ACTION
+	#define YY_USER_ACTION
 		yylloc.first_line = yylloc.last_line = yylineno; \
 		yylloc.first_column = yycolumn; \
 		yylloc.last_column = yycolumn + yyleng-1; \
-		yycolumn += yyleng;*/
+		yycolumn += yyleng;
 %}
 /* regex */
 nl	[\n]
@@ -23,8 +23,8 @@ id	{letter}({letter}|{digit10})*
 float	{int10}(\.{digit10}+)?([Ee]{int10})?
 
 %%
-{ws}	{/*no action*/}
-if	{printf("IF\n");	int yylval = plantKEY("IF");/*	return IF;*/}
+{ws}	{/*no action and no return{nl}	{yycolumn = 1; REJECT;*/}REJECT;}
+if	{printf("IF\n");	yylval = plantKEY("IF");/*	return IF;*/}
 else	{printf("ELSE\n");	yylval = plantKEY("ELSE");/*	return ELSE;*/}
 int	{printf("TYPE\n");	yylval = plantKEY("int");/*	return TYPE;*/}
 float	{printf("TYPE\n");	yylval = plantKEY("float");/*	return TYPE;*/}
@@ -163,3 +163,4 @@ int plantRELOP(){
 	addTree(tmp);
 	return (int)tmp;
 }
+

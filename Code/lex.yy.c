@@ -381,8 +381,8 @@ static void yy_fatal_error (yyconst char msg[]  );
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
 
-#define YY_NUM_RULES 39
-#define YY_END_OF_BUFFER 40
+#define YY_NUM_RULES 38
+#define YY_END_OF_BUFFER 39
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -390,37 +390,17 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_acclist[149] =
+static yyconst flex_int16_t yy_accept[85] =
     {   0,
-       40,   38,   39,    1,   38,   39,    1,    2,   39,   24,
-       38,   39,   38,   39,   26,   38,   39,   27,   38,   39,
-       20,   38,   39,   18,   38,   39,   16,   38,   39,   19,
-       38,   39,   25,   38,   39,   21,   38,   39,   12,   14,
-       38,   39,   12,   14,   38,   39,   15,   38,   39,   32,
-       38,   39,   17,   38,   39,   36,   38,   39,   10,   38,
-       39,   28,   38,   39,   29,   38,   39,   10,   38,   39,
-       10,   38,   39,   10,   38,   39,   10,   38,   39,   10,
-       38,   39,   10,   38,   39,   30,   38,   39,   38,   39,
-       31,   38,   39,    1,   22,   12,   14,   12,   14,   11,
-
-       11,   12,   14,   33,   35,   34,   37,   10,   10,   10,
-        3,   10,   10,   10,   10,   10,   23,   14,   11,   14,
-       14,   13,   13,   10,   10,    5,   10,   10,   10,   10,
-       14,   13,    4,   10,   10,   10,   10,   10,    6,   10,
-       10,   10,    9,   10,    8,   10,    7,   10
-    } ;
-
-static yyconst flex_int16_t yy_accept[86] =
-    {   0,
-        1,    1,    1,    2,    4,    7,   10,   13,   15,   18,
-       21,   24,   27,   30,   33,   36,   39,   43,   47,   50,
-       53,   56,   59,   62,   65,   68,   71,   74,   77,   80,
-       83,   86,   89,   91,   94,   95,   96,   98,  100,  100,
-      101,  102,  102,  102,  104,  105,  106,  107,  108,  109,
-      110,  111,  113,  114,  115,  116,  117,  118,  119,  120,
-      120,  121,  122,  123,  124,  125,  126,  128,  129,  130,
-      131,  132,  133,  135,  136,  137,  138,  139,  141,  142,
-      143,  145,  147,  149,  149
+        0,    0,   39,   37,    1,    1,   23,   37,   25,   26,
+       19,   17,   15,   18,   24,   20,   11,   11,   14,   31,
+       16,   35,    9,   27,   28,    9,    9,    9,    9,    9,
+        9,   29,   37,   30,    1,   21,   11,   11,    0,   10,
+       10,    0,    0,   11,   32,   34,   33,   36,    9,    9,
+        9,    2,    9,    9,    9,    9,   22,   13,   10,    0,
+       13,   13,   12,   12,    9,    9,    4,    9,    9,    9,
+       13,   12,    3,    9,    9,    9,    9,    5,    9,    9,
+        8,    7,    6,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -539,43 +519,37 @@ static yyconst flex_int16_t yy_chk[188] =
     } ;
 
 /* Table of booleans, true if rule could match eol. */
-static yyconst flex_int32_t yy_rule_can_match_eol[40] =
+static yyconst flex_int32_t yy_rule_can_match_eol[39] =
     {   0,
-1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-        };
+1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     };
+
+static yy_state_type yy_last_accepting_state;
+static char *yy_last_accepting_cpos;
 
 extern int yy_flex_debug;
 int yy_flex_debug = 0;
 
-static yy_state_type *yy_state_buf=0, *yy_state_ptr=0;
-static char *yy_full_match;
-static int yy_lp;
-#define REJECT \
-{ \
-*yy_cp = (yy_hold_char); /* undo effects of setting up yytext */ \
-yy_cp = (yy_full_match); /* restore poss. backed-over text */ \
-++(yy_lp); \
-goto find_rule; \
-}
-
+/* The intent behind this definition is that it'll catch
+ * any uses of REJECT which flex missed.
+ */
+#define REJECT reject_used_but_not_detected
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
 #line 1 "lexical.l"
 #line 3 "lexical.l"
-	#include "syntax.tab.h"
+//	#include "syntax.tab.h"
 	#include "GrammarTree.h"
 	int yycolumn = 1;
 /*	#define YY_USER_ACTION
 		yylloc.first_line = yylloc.last_line = yylineno; \
 		yylloc.first_column = yycolumn; \
 		yylloc.last_column = yycolumn + yyleng-1; \
-		yycolumn += yyleng;
-		*/
+		yycolumn += yyleng;*/
 /* regex */
-#line 579 "lex.yy.c"
+#line 553 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -762,9 +736,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 26 "lexical.l"
+#line 25 "lexical.l"
 
-#line 768 "lex.yy.c"
+#line 742 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -773,12 +747,6 @@ YY_DECL
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
 #endif
-
-        /* Create the reject buffer large enough to save one state per allowed character. */
-        if ( ! (yy_state_buf) )
-            (yy_state_buf) = (yy_state_type *)yyalloc(YY_STATE_BUF_SIZE  );
-            if ( ! (yy_state_buf) )
-                YY_FATAL_ERROR( "out of dynamic memory in yylex()" );
 
 		if ( ! (yy_start) )
 			(yy_start) = 1;	/* first start state */
@@ -811,14 +779,15 @@ YY_DECL
 		yy_bp = yy_cp;
 
 		yy_current_state = (yy_start);
-
-		(yy_state_ptr) = (yy_state_buf);
-		*(yy_state_ptr)++ = yy_current_state;
-
 yy_match:
 		do
 			{
 			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			if ( yy_accept[yy_current_state] )
+				{
+				(yy_last_accepting_state) = yy_current_state;
+				(yy_last_accepting_cpos) = yy_cp;
+				}
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
@@ -826,28 +795,17 @@ yy_match:
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-			*(yy_state_ptr)++ = yy_current_state;
 			++yy_cp;
 			}
 		while ( yy_base[yy_current_state] != 144 );
 
 yy_find_action:
-		yy_current_state = *--(yy_state_ptr);
-		(yy_lp) = yy_accept[yy_current_state];
-find_rule: /* we branch to this label when backing up */
-		for ( ; ; ) /* until we find what rule we matched */
-			{
-			if ( (yy_lp) && (yy_lp) < yy_accept[yy_current_state + 1] )
-				{
-				yy_act = yy_acclist[(yy_lp)];
-					{
-					(yy_full_match) = yy_cp;
-					break;
-					}
-				}
-			--yy_cp;
-			yy_current_state = *--(yy_state_ptr);
-			(yy_lp) = yy_accept[yy_current_state];
+		yy_act = yy_accept[yy_current_state];
+		if ( yy_act == 0 )
+			{ /* have to back up */
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			yy_act = yy_accept[yy_current_state];
 			}
 
 		YY_DO_BEFORE_ACTION;
@@ -866,206 +824,207 @@ do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
 	{ /* beginning of action switch */
+			case 0: /* must back up */
+			/* undo the effects of YY_DO_BEFORE_ACTION */
+			*yy_cp = (yy_hold_char);
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			goto yy_find_action;
+
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 27 "lexical.l"
-{/*no action and no return*/REJECT;}
+#line 26 "lexical.l"
+{/*no action*/}
 	YY_BREAK
 case 2:
-/* rule 2 can match eol */
 YY_RULE_SETUP
-#line 28 "lexical.l"
-{yycolumn = 1; REJECT;}
+#line 27 "lexical.l"
+{printf("IF\n");	int yylval = plantKEY("IF");/*	return IF;*/}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 29 "lexical.l"
-{printf("IF\n"); plantKEY("IF"); return IF;}
+#line 28 "lexical.l"
+{printf("ELSE\n");	yylval = plantKEY("ELSE");/*	return ELSE;*/}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 30 "lexical.l"
-{printf("ELSE\n"); plantKEY("ELSE"); return ELSE;}
+#line 29 "lexical.l"
+{printf("TYPE\n");	yylval = plantKEY("int");/*	return TYPE;*/}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 31 "lexical.l"
-{printf("TYPE\n"); plantKEY("int"); return TYPE;}
+#line 30 "lexical.l"
+{printf("TYPE\n");	yylval = plantKEY("float");/*	return TYPE;*/}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 32 "lexical.l"
-{printf("TYPE\n"); plantKEY("float"); return TYPE;}
+#line 31 "lexical.l"
+{printf("STRUCT\n");	yylval = plantKEY("STRUCT");/*	return STRUCT;*/}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 33 "lexical.l"
-{printf("STRUCT\n"); plantKEY("STRUCT"); return STRUCT;}
+#line 32 "lexical.l"
+{printf("RETURN\n");	yylval = plantKEY("RETURN");/*	return RETURN;*/}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 34 "lexical.l"
-{printf("RETURN\n"); plantKEY("RETURN"); return RETURN;}
+#line 33 "lexical.l"
+{printf("WHILE\n");	yylval = plantKEY("WHILE");/*	return WHILE;*/}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 35 "lexical.l"
-{printf("WHILE\n"); plantKEY("WHILE"); return WHILE;}
+#line 34 "lexical.l"
+{printf("ID\n");	yylval = plantID();	/*	return ID;*/}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 36 "lexical.l"
-{printf("ID\n"); plantID(); return ID;}
+#line 35 "lexical.l"
+{printf("INT\n");	yylval = plantINT(8);	/*	return INT;*/}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 37 "lexical.l"
-{printf("INT\n"); plantINT(8); return INT;}
+#line 36 "lexical.l"
+{printf("INT\n");	yylval = plantINT(10);	/*	return INT;*/}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 38 "lexical.l"
-{printf("INT\n"); plantINT(10); return INT;}
+#line 37 "lexical.l"
+{printf("INT\n");	yylval = plantINT(16);	/*	return INT;*/}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 39 "lexical.l"
-{printf("INT\n"); plantINT(16); return INT;}
+#line 38 "lexical.l"
+{printf("FLOAT\n");	yylval = plantFLOAT();	/*	return FLOAT;*/}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 40 "lexical.l"
-{printf("FLOAT\n"); plantFLOAT(); return FLOAT;}
+#line 39 "lexical.l"
+{printf("SEMI\n");	yylval = plantSYMBOL("SEMI");/*	return SEMI;*/}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 41 "lexical.l"
-{printf("SEMI\n"); plantSYMBOL("SEMI"); return SEMI;}
+#line 40 "lexical.l"
+{printf("COMMA\n");	yylval = plantSYMBOL("COMMA");/*	return COMMA;*/}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 42 "lexical.l"
-{printf("COMMA\n"); plantSYMBOL("COMMA"); return COMMA;}
+#line 41 "lexical.l"
+{printf("ASSIGNOP\n");	yylval = plantSYMBOL("ASSIGNOP");/*	return ASSIGNOP;*/}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 43 "lexical.l"
-{printf("ASSIGNOP\n"); plantSYMBOL("ASSIGNOP"); return ASSIGNOP;}
+#line 42 "lexical.l"
+{printf("PLUS\n");	yylval = plantSYMBOL("PLUS");/*	return PLUS;*/}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 44 "lexical.l"
-{printf("PLUS\n"); plantSYMBOL("PLUS"); return PLUS;}
+#line 43 "lexical.l"
+{printf("MINUS\n");	yylval = plantSYMBOL("MINUS");/*	return MINUS;*/}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 45 "lexical.l"
-{printf("MINUS\n"); plantSYMBOL("MINUS"); return MINUS;}
+#line 44 "lexical.l"
+{printf("STAR\n");	yylval = plantSYMBOL("STAR");/*	return STAR;*/}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 46 "lexical.l"
-{printf("STAR\n"); plantSYMBOL("STAR"); return STAR;}
+#line 45 "lexical.l"
+{printf("DIV\n");	yylval = plantSYMBOL("DIV");/*	return DIV;*/}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 47 "lexical.l"
-{printf("DIV\n"); plantSYMBOL("DIV"); return DIV;}
+#line 46 "lexical.l"
+{printf("AND\n");	yylval = plantSYMBOL("AND");/*	return AND;*/}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 48 "lexical.l"
-{printf("AND\n"); plantSYMBOL("AND"); return AND;}
+#line 47 "lexical.l"
+{printf("OR\n");	yylval = plantSYMBOL("OR");/*	return OR;*/}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 49 "lexical.l"
-{printf("OR\n"); plantSYMBOL("OR"); return OR;}
+#line 48 "lexical.l"
+{printf("NOT\n");	yylval = plantSYMBOL("NOT");/*	return NOT;*/}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 50 "lexical.l"
-{printf("NOT\n"); plantSYMBOL("NOT"); return NOT;}
+#line 49 "lexical.l"
+{printf("DOT\n");	yylval = plantSYMBOL("DOT");/*	return DOT;*/}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 51 "lexical.l"
-{printf("DOT\n"); plantSYMBOL("DOT"); return DOT;}
+#line 50 "lexical.l"
+{printf("LP\n");	yylval = plantSYMBOL("LP");/*	return LP;*/}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 52 "lexical.l"
-{printf("LP\n"); plantSYMBOL("LP"); return LP;}
+#line 51 "lexical.l"
+{printf("RP\n");	yylval = plantSYMBOL("RP");/*	return RP;*/}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 53 "lexical.l"
-{printf("RP\n"); plantSYMBOL("RP"); return RP;}
+#line 52 "lexical.l"
+{printf("LB\n");	yylval = plantSYMBOL("LB");/*	return LB;*/}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 54 "lexical.l"
-{printf("LB\n"); plantSYMBOL("LB"); return LB;}
+#line 53 "lexical.l"
+{printf("RB\n");	yylval = plantSYMBOL("RB");/*	return RB;*/}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 55 "lexical.l"
-{printf("RB\n"); plantSYMBOL("RB"); return RB;}
+#line 54 "lexical.l"
+{printf("LC\n");	yylval = plantSYMBOL("LC");/*	return LC;*/}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 56 "lexical.l"
-{printf("LC\n"); plantSYMBOL("LC"); return LC;}
+#line 55 "lexical.l"
+{printf("RC\n");	yylval = plantSYMBOL("RC");/*	return RC;*/}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 57 "lexical.l"
-{printf("RC\n"); plantSYMBOL("RC"); return RC;}
+#line 56 "lexical.l"
+{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 58 "lexical.l"
-{printf("RELOP\n"); plantRELOP(); return RELOP;}
+#line 57 "lexical.l"
+{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 59 "lexical.l"
-{printf("RELOP\n"); plantRELOP(); return RELOP;}
+#line 58 "lexical.l"
+{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 60 "lexical.l"
-{printf("RELOP\n"); plantRELOP(); return RELOP;}
+#line 59 "lexical.l"
+{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 61 "lexical.l"
-{printf("RELOP\n"); plantRELOP(); return RELOP;}
+#line 60 "lexical.l"
+{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 62 "lexical.l"
-{printf("RELOP\n"); plantRELOP(); return RELOP;}
+#line 61 "lexical.l"
+{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 63 "lexical.l"
-{printf("RELOP\n"); plantRELOP(); return RELOP;}
+#line 62 "lexical.l"
+{printf("Error type A at Line %d: Mysterious Character %s\n", yylineno, yytext);}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 64 "lexical.l"
-{printf("Error type A at Line %d: Mysterious Character \"%s\"\n", yylineno, yytext);}
-	YY_BREAK
-case 39:
-YY_RULE_SETUP
-#line 66 "lexical.l"
+#line 63 "lexical.l"
 ECHO;
 	YY_BREAK
-#line 1067 "lex.yy.c"
-			case YY_STATE_EOF(INITIAL):
-				yyterminate();
+#line 1026 "lex.yy.c"
+case YY_STATE_EOF(INITIAL):
+	yyterminate();
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1255,8 +1214,37 @@ static int yy_get_next_buffer (void)
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
-			YY_FATAL_ERROR(
-"input buffer overflow, can't enlarge buffer because scanner uses REJECT" );
+			/* just a shorter name for the current buffer */
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
+
+			int yy_c_buf_p_offset =
+				(int) ((yy_c_buf_p) - b->yy_ch_buf);
+
+			if ( b->yy_is_our_buffer )
+				{
+				int new_size = b->yy_buf_size * 2;
+
+				if ( new_size <= 0 )
+					b->yy_buf_size += b->yy_buf_size / 8;
+				else
+					b->yy_buf_size *= 2;
+
+				b->yy_ch_buf = (char *)
+					/* Include room in for 2 EOB chars. */
+					yyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
+				}
+			else
+				/* Can't grow it, we don't own it. */
+				b->yy_ch_buf = 0;
+
+			if ( ! b->yy_ch_buf )
+				YY_FATAL_ERROR(
+				"fatal error - scanner input buffer overflow" );
+
+			(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
+
+			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
+						number_to_move - 1;
 
 			}
 
@@ -1315,12 +1303,14 @@ static int yy_get_next_buffer (void)
     
 	yy_current_state = (yy_start);
 
-	(yy_state_ptr) = (yy_state_buf);
-	*(yy_state_ptr)++ = yy_current_state;
-
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
 		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		if ( yy_accept[yy_current_state] )
+			{
+			(yy_last_accepting_state) = yy_current_state;
+			(yy_last_accepting_cpos) = yy_cp;
+			}
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
@@ -1328,7 +1318,6 @@ static int yy_get_next_buffer (void)
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-		*(yy_state_ptr)++ = yy_current_state;
 		}
 
 	return yy_current_state;
@@ -1342,8 +1331,14 @@ static int yy_get_next_buffer (void)
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
 	register int yy_is_jam;
-    
+    	register char *yy_cp = (yy_c_buf_p);
+
 	register YY_CHAR yy_c = 1;
+	if ( yy_accept[yy_current_state] )
+		{
+		(yy_last_accepting_state) = yy_current_state;
+		(yy_last_accepting_cpos) = yy_cp;
+		}
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
@@ -1352,8 +1347,6 @@ static int yy_get_next_buffer (void)
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 84);
-	if ( ! yy_is_jam )
-		*(yy_state_ptr)++ = yy_current_state;
 
 	return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1954,11 +1947,6 @@ static int yy_init_globals (void)
     (yy_init) = 0;
     (yy_start) = 0;
 
-    (yy_state_buf) = 0;
-    (yy_state_ptr) = 0;
-    (yy_full_match) = 0;
-    (yy_lp) = 0;
-
 /* Defined in main.c */
 #ifdef YY_STDINIT
     yyin = stdin;
@@ -1988,9 +1976,6 @@ int yylex_destroy  (void)
 	/* Destroy the stack itself. */
 	yyfree((yy_buffer_stack) );
 	(yy_buffer_stack) = NULL;
-
-    yyfree ( (yy_state_buf) );
-    (yy_state_buf)  = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * yylex() is called, initialization will occur. */
@@ -2047,13 +2032,18 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 66 "lexical.l"
+#line 63 "lexical.l"
 
 
-int yywrap(){
+int main(int argc, char **argv){
+	if (argc > 1){
+		yyin = fopen(argv[1],"r");
+		while (yylex() != 0);
+		return 0;
+	}
 	return 1;
 }
-void plantINT(int radix){
+int plantINT(int radix){
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->valno = 1;
@@ -2068,10 +2058,10 @@ void plantINT(int radix){
 	tmp->left = NULL;
 	tmp->right = NULL;
 
-	yylval = (int)tmp;
 	addTree(tmp);
+	return (int)tmp;
 }
-void plantFLOAT(){
+int plantFLOAT(){
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->valno = 0;
@@ -2082,10 +2072,10 @@ void plantFLOAT(){
 	tmp->left = NULL;
 	tmp->right = NULL;
 
-	yylval = (int)tmp;
 	addTree(tmp);
+	return (int)tmp;
 }
-void plantID(){
+int plantID(){
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->valno = 3;
@@ -2097,10 +2087,10 @@ void plantID(){
 	tmp->left = NULL;
 	tmp->right = NULL;
 
-	yylval = (int)tmp;
 	addTree(tmp);
+	return (int)tmp;
 }
-void plantKEY(char *name) {
+int plantKEY(char *name) {
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->terminal = 1;
@@ -2115,10 +2105,10 @@ void plantKEY(char *name) {
 	tmp->left = NULL;
 	tmp->right = NULL;
 
-	yylval = (int)tmp;
 	addTree(tmp);
+	return (int)tmp;
 }
-void plantSYMBOL(char *syb){
+int plantSYMBOL(char *syb){
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->valno = -1;
@@ -2129,10 +2119,10 @@ void plantSYMBOL(char *syb){
 	tmp->left = NULL;
 	tmp->right = NULL;
 
-	yylval = (int)tmp;
 	addTree(tmp);
+	return (int)tmp;
 }
-void plantRELOP(){
+int plantRELOP(){
 	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
 	tmp->line = yylineno;
 	tmp->valno = 3;
@@ -2144,7 +2134,7 @@ void plantRELOP(){
 	tmp->left = NULL;
 	tmp->right = NULL;
 
-	yylval = (int)tmp;
 	addTree(tmp);
+	return (int)tmp;
 }
 

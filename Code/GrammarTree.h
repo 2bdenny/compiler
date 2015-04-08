@@ -120,7 +120,7 @@ int delTree(Leaf *tree){
 	return false;
 }
 int reduce1(int ln, char *name, int l1){
-	*l0 = (int)makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
+	Leaf *l0 = makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
 	addChild((Leaf *)l0, (Leaf *)l1);
 
 	addTree((Leaf *)l0);
@@ -130,12 +130,12 @@ int reduce1(int ln, char *name, int l1){
 int reduce0(int ln, char *name){
 	Value vl;
 	vl.val_int = 0;
-	Leaf *l0 = (int)makeLeaf(ln, 0, 0, name, vl);
+	Leaf *l0 = makeLeaf(ln, 0, 0, name, vl);
 	addTree((Leaf *)l0);
 	return (int)l0;
 }
 int reduce2(int ln, char *name, int l1, int l2){
-	Leaf *l0 = (int)makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
+	Leaf *l0 = makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
 	addChild((Leaf *)l0, (Leaf *)l1);
 	addChild((Leaf *)l0, (Leaf *)l2);
 
@@ -145,7 +145,7 @@ int reduce2(int ln, char *name, int l1, int l2){
 	return (int)l0;
 }
 int reduce3(int ln, char *name, int l1, int l2, int l3){
-	Leaf *l0 = (int)makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
+	Leaf *l0 = makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
 	addChild((Leaf *)l0, (Leaf *)l1);
 	addChild((Leaf *)l0, (Leaf *)l2);
 	addChild((Leaf *)l0, (Leaf *)l3);
@@ -157,7 +157,7 @@ int reduce3(int ln, char *name, int l1, int l2, int l3){
 	return (int)l0;
 }
 int reduce4(int ln, char *name, int l1, int l2, int l3, int l4){
-	Leaf *l0 = (int)makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
+	Leaf *l0 = makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
 	addChild((Leaf *)l0, (Leaf *)l1);
 	addChild((Leaf *)l0, (Leaf *)l2);
 	addChild((Leaf *)l0, (Leaf *)l3);
@@ -171,7 +171,7 @@ int reduce4(int ln, char *name, int l1, int l2, int l3, int l4){
 	return (int)l0;
 }
 int reduce5(int ln, char *name, int l1, int l2, int l3, int l4, int l5){
-	Leaf *l0 = (int)makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
+	Leaf *l0 = makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
 	addChild((Leaf *)l0, (Leaf *)l1);
 	addChild((Leaf *)l0, (Leaf *)l2);
 	addChild((Leaf *)l0, (Leaf *)l3);
@@ -187,7 +187,7 @@ int reduce5(int ln, char *name, int l1, int l2, int l3, int l4, int l5){
 	return (int)l0;
 }
 int reduce6(int ln, char *name, int l1, int l2, int l3, int l4, int l5, int l6){
-	Leaf *l0 = (int)makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
+	Leaf *l0 = makeLeaf(ln, ((Leaf *)l1)->valno, 0, name, ((Leaf *)l1)->val);
 	addChild((Leaf *)l0, (Leaf *)l1);
 	addChild((Leaf *)l0, (Leaf *)l2);
 	addChild((Leaf *)l0, (Leaf *)l3);
