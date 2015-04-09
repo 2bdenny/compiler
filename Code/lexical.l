@@ -1,13 +1,16 @@
 %option yylineno
 %{
+	#define YYSTYPE char*
 	#include "syntax.tab.h"
 	#include "GrammarTree.h"
 	int yycolumn = 1;
-	#define YY_USER_ACTION
-		yylloc.first_line = yylloc.last_line = yylineno; \
-		yylloc.first_column = yycolumn; \
-		yylloc.last_column = yycolumn + yyleng-1; \
-		yycolumn += yyleng;
+	#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng-1;yycolumn += yyleng;
+void plantINT(int radix);
+void plantFLOAT();
+void plantID();
+void plantRELOP();
+void plantKEY(char *name);
+void plantSYMBOL(char *syb);
 %}
 /* regex */
 nl	\n
@@ -23,8 +26,7 @@ id	{letter}({letter}|{digit10})*
 float	{int10}(\.{digit10}+)?([Ee]{int10})?
 
 %%
-{ws}	{/*no action and no return*/REJECT;}
-{nl}	{yycolumn = 1; REJECT;}
+{ws}	{/*no action and no return*/}
 if	{printf("IF\n"); plantKEY("IF"); return IF;}
 else	{printf("ELSE\n"); plantKEY("ELSE"); return ELSE;}
 int	{printf("TYPE\n"); plantKEY("int"); return TYPE;}
@@ -67,96 +69,81 @@ int yywrap(){
 	return 1;
 }
 void plantINT(int radix){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 1;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memcpy(tmp->token, "INT", 3);
+	Value vl;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
 	switch(radix){
-		case 8: tmp->val.val_int = atoi(yytext+1);
-		case 10: tmp->val.val_int = atoi(yytext);
-		case 16: tmp->val.val_int = atoi(yytext+2);
+		case 8: vl.val_int = atoi(yytext+1);
+		case 10: vl.val_int = atoi(yytext);
+		case 16: vl.val_int = atoi(yytext+2);
+		default: vl.val_int = 0;
 	}
-	tmp->left = NULL;
-	tmp->right = NULL;
+	Leaf *tmp = makeLeaf(yylineno, 1, 1, "INT", vl);
 
-	yylval = (int)tmp;
+	yylval = (char *)tmp;
 	addTree(tmp);
 }
 void plantFLOAT(){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 0;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memcpy(tmp->token, "FLOAT", 5);
-	tmp->val.val_double = atof(yytext);
-	tmp->left = NULL;
-	tmp->right = NULL;
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = atof(yytext);
+	vl.val_float = atof(yytext);
+	memset(vl.val_name, 0, 32);
 
-	yylval = (int)tmp;
+	Leaf *tmp = makeLeaf(yylineno, 0, 1, "FLOAT", vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 }
 void plantID(){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 3;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memcpy(tmp->token, "ID", 2);
-	memset(tmp->val.val_name, 0, 32);
-	memcpy(tmp->val.val_name, yytext, yyleng);
-	tmp->left = NULL;
-	tmp->right = NULL;
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
+	memcpy(vl.val_name, yytext, yyleng);
 
-	yylval = (int)tmp;
+	Leaf *tmp = makeLeaf(yylineno, 3, 1, "ID", vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 }
 void plantKEY(char *name) {
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memset(tmp->val.val_name, 0, 32);
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
+
+	Leaf *tmp = NULL;
+	makeLeaf(yylineno, 3, 1, "ID", vl);
 	switch(name[0]){
 		case 'i': 
-		case 'f':{memcpy(tmp->token, "TYPE", 4); memcpy(tmp->val.val_name, yytext, yyleng); tmp->valno = 3;} break;
-		default: {memcpy(tmp->token, name, strlen(name)); tmp->valno = -1;} break;
+		case 'f':{memcpy(vl.val_name, name, strlen(name)); tmp = makeLeaf(yylineno, 3, 1, "TYPE", vl);} break;
+		default: {tmp = makeLeaf(yylineno, -1, 1, name, vl);} break;
 	}
-	memcpy(tmp->token, name, strlen(name));
-	tmp->left = NULL;
-	tmp->right = NULL;
-
-	yylval = (int)tmp;
+	yylval = (char *)tmp;
 	addTree(tmp);
 }
 void plantSYMBOL(char *syb){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = -1;
-	tmp->ternimal = 1;
-	memset(tmp->token, 0, 20);
-	memset(tmp->val.val_name, 0, 32);
-	memcpy(tmp->token, syb, strlen(syb));
-	tmp->left = NULL;
-	tmp->right = NULL;
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
 
-	yylval = (int)tmp;
+	Leaf *tmp = makeLeaf(yylineno, -1, 1, syb, vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 }
 void plantRELOP(){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 3;
-	tmp->ternimal = 1;
-	memset(tmp->token, 0, 20);
-	memset(tmp->val.val_name, 0, 32);
-	memcpy(tmp->token, "RELOP", 5);
-	memcpy(tmp->val.val_name, yytext, yyleng);
-	tmp->left = NULL;
-	tmp->right = NULL;
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
+	memcpy(vl.val_name, yytext, yyleng);
 
-	yylval = (int)tmp;
+	Leaf *tmp = makeLeaf(yylineno, 3, 1, "RELOP", vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 }

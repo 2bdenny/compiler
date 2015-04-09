@@ -1,7 +1,13 @@
 %{
+#define YYSTYPE char*
+#include <stdarg.h>
 #include <sys/types.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "lex.yy.c"
 #include "GrammarTree.h"
+Leaf *reduce(int len, ...);
+Leaf *reduce0(char *name, int line);
 %}
 
 /* declared types */
@@ -25,167 +31,131 @@
 %left RELOP
 %left PLUS MINUS
 %left STAR DIV
-%right MINUS NOT
+%right NOT
 %left LP RP LB RB DOT
 %%
-Program		: ExtDefList	{reduce1("Program");}	/*High-level Definitions*/
+Program		: ExtDefList			{$$ = (char *)reduce(3, "Program", @$.first_line, $1); display((Leaf *)($$), 0);}
 		;
-ExtDefList	: /* empty */	{reduce0("ExtDefList");}
-		| ExtDef ExtDefList	{reduce2("ExtDefList");}	
+ExtDefList	: ExtDef ExtDefList		{$$ = (char *)reduce(4, "ExtDefList", @$.first_line, $1, $2);}
+		| /* empty */			{$$ = (char *)reduce0("ExtDefList", @$.first_line);}
 		;
-ExtDef		: Specifier ExtDecList SEMI	{reduce3("ExtDef");}
-		| Specifier SEMI		{reduce2("ExtDef");}
-		| Specifier FunDec CompSt	{reduce3("ExtDef");}
+ExtDef		: Specifier ExtDecList SEMI	{$$ = (char *)reduce(5, "ExtDef", @$.first_line, $1, $2, $3);}
+		| Specifier SEMI		{$$ = (char *)reduce(4, "ExtDef", @$.first_line, $1, $2);}
+		| Specifier FunDec CompSt	{$$ = (char *)reduce(5, "ExtDef", @$.first_line, $1, $2, $3);}
 		;
-ExtDecList	: VarDec	{reduce1("ExtDecList");}
-		| VarDec COMMA ExtDecList	{reduce3("ExtDecList");}
-		;
-
-Specifier	: TYPE		{reduce1("Specifier");}		/*Specifiers*/
-		| StructSpecifier	{reduce1("Specifier");}
-		;
-StructSpecifier	: STRUCT OptTag LC DefList RC	{reduce4("StructSpecifier");}
-		| STRUCT Tag	{reduce2("StructSpecifier");}
-		;
-OptTag		: /* empty */	{reduce0("OptTag");}
-		| ID		{reduce1("OptTag");}
-		;
-Tag		: ID		{reduce1("Tag");}
+ExtDecList	: VarDec			{$$ = (char *)reduce(3, "ExtDecList", @$.first_line, $1);}
+		| VarDec COMMA ExtDecList	{$$ = (char *)reduce(5, "ExtDecList", @$.first_line, $1, $2, $3);}
 		;
 
-VarDec		: ID		{reduce1("VarDec");}	/*Declarators*/
-		| VarDec LB INT RB	{reduce4("VarDec");}
+Specifier	: TYPE				{$$ = (char *)reduce(3, "Specifier", @$.first_line, $1);}
+		| StructSpecifier		{$$ = (char *)reduce(3, "Specifier", @$.first_line, $1);}
 		;
-FunDec		: ID LP VarList RP	{reduce4("FunDec");}
-		| ID LP RP	{reduce3("FunDec");}
+StructSpecifier	: STRUCT OptTag LC DefList RC	{$$ = (char *)reduce(6, "StructSpecifier", @$.first_line, $1, $2, $3, $4);}
+		| STRUCT Tag			{$$ = (char *)reduce(4, "StructSpecifier", @$.first_line, $1, $2);}
 		;
-VarList		: ParamDec COMMA VarList	{reduce3("VarList");}
-		| ParamDec	{reduce1("ParamDec");}
+OptTag		: ID				{$$ = (char *)reduce(3, "OptTag", @$.first_line, $1);}
+		| /* empty */			{$$ = (char *)reduce0("OptTag", @$.first_line);}
 		;
-
-ComptSt		: LC DefList StmtList RC	{reduce4("ComptSt");}/*Statements*/
-		;
-StmtList	: /* empty */	{reduce0("StmtList");}
-		| Stmt StmtList	{reduce2("StmtList");}
-		;
-Stmt		: Exp SEMI	{reduce2("Stmt");}
-		| CompSt	{reduce1("Stmt");}
-		| RETURN Exp SEMI	{reduce3("Stmt");}
-		| IF LP Exp RP Stmt	%prec LOWER_THAN_ELSE	{reduce5("Stmt");}
-		| IF LP Exp RP Stmt ELSE Stmt	{reduce6("Stmt");}
-		| WHILE LP Exp RP Stmt	{reduce5("Stmt");}
+Tag		: ID				{$$ = (char *)reduce(3, "Tag", @$.first_line, $1);}
 		;
 
-DefList		: /* empty */	{reduce0("DefList");}	/*Local Definitions*/
-		| Def DefList	{reduce2("DefList");}
+VarDec		: ID				{$$ = (char *)reduce(3, "VarDec", @$.first_line, $1);}
+		| VarDec LB INT RB		{$$ = (char *)reduce(6, "VarDec", @$.first_line, $1, $2, $3, $4);}
 		;
-Def		: Specifier DecList SEMI	{reduce3("Def");}
+FunDec		: ID LP VarList RP		{$$ = (char *)reduce(6, "FunDec", @$.first_line, $1, $2, $3, $4);}
+		| ID LP RP			{$$ = (char *)reduce(5, "FunDec", @$.first_line, $1, $2, $3);}
 		;
-DecList		: Dec		{reduce1("DecList");}
-		| Dec COMMA DecList	{reduce3("DecList");}
+VarList		: ParamDec COMMA VarList	{$$ = (char *)reduce(5, "VarList", @$.first_line, $1, $2, $3);}
+		| ParamDec			{$$ = (char *)reduce(3, "ParamDec", @$.first_line, $1);}
 		;
-Dec		: VarDec	{reduce1("Dec");}
-		| VarDec ASSIGNOP Exp	{reduce3("Dec");}
+ParamDec	: Specifier VarDec		{$$ = (char *)reduce(4, "ParamDec", @$.first_line, $1, $2);}
 		;
 
-Exp		: Exp ASSIGNOP Exp	{reduce3("Exp");}/*Expressions*/
-		| Exp AND Exp		{reduce3("Exp");}
-		| Exp OR Exp		{reduce3("Exp");}
-		| Exp RELOP Exp		{reduce3("Exp");}
-		| Exp PLUS Exp		{reduce3("Exp");}	
-		| Exp MINUS Exp	{reduce3("Exp");}
-		| Exp STAR Exp	{reduce3("Exp");}
-		| Exp DIV Exp	{reduce3("Exp");}
-		| LP Exp RP	{reduce3("Exp");}
-		| MINUS Exp	{reduce2("Exp");}
-		| NOT Exp	{reduce2("Exp");}
-		| ID LP Args RP	{reduce4("Exp");}
-		| Exp LB Exp RB	{reduce4("Exp");}
-		| Exp DOT ID	{reduce3("Exp");}
-		| ID		{reduce1("Exp");}
-		| INT		{reduce1("Exp");}
-		| FLOAT		{reduce1("Exp");}
+CompSt		: LC DefList StmtList RC	{$$ = (char *)reduce(6, "CompSt", @$.first_line, $1, $2, $3, $4);}
+		| error RC			{printf("{ not match "); $$ = (char *)reduce(4, "CompSt", @$.first_line, $1, $2);}
 		;
-Args		: Exp COMMA Args{reduce3("Args");}
-		| Exp		{reduce1("Args");}
+StmtList	: Stmt StmtList			{$$ = (char *)reduce(4, "StmtList", @$.first_line, $1, $2);}
+		| /* empty */			{$$ = (char *)reduce0("StmtList", @$.first_line);}
 		;
+Stmt		: Exp SEMI			{$$ = (char *)reduce(4, "Stmt", @$.first_line, $1, $2);}
+		| CompSt			{$$ = (char *)reduce(3, "Stmt", @$.first_line, $1);}
+		| RETURN Exp SEMI		{$$ = (char *)reduce(5, "Stmt", @$.first_line, $1, $2, $3);}
+		| IF LP Exp RP Stmt	%prec LOWER_THAN_ELSE	{$$ = (char *)reduce(7, "Stmt", @$.first_line, $1, $2, $3, $4, $5);}
+		| IF LP Exp RP Stmt ELSE Stmt	{$$ = (char *)reduce(8, "Stmt", @$.first_line, $1, $2, $3, $4, $5, $6);}
+		| WHILE LP Exp RP Stmt		{$$ = (char *)reduce(7, "Stmt", @$.first_line, $1, $2, $3, $4, $5);}
+		| error SEMI			{printf("Expect a ;"); $$ = (char *)reduce(4, "Stmt", @$.first_line, $1, $2);}
+		;
+
+DefList		: Def DefList			{$$ = (char *)reduce(4, "DefList", @$.first_line, $1, $2);}
+		| /* empty */			{$$ = (char *)reduce0("DefList", @$.first_line);}
+		;
+Def		: Specifier DecList SEMI	{$$ = (char *)reduce(5, "Def", @$.first_line, $1, $2, $3);}
+		;
+DecList		: Dec				{$$ = (char *)reduce(3, "DecList", @$.first_line, $1);}
+		| Dec COMMA DecList		{$$ = (char *)reduce(5, "DecList", @$.first_line, $1, $2, $3);}
+		;
+Dec		: VarDec			{$$ = (char *)reduce(3, "Dec", @$.first_line, $1);}
+		| VarDec ASSIGNOP Exp		{$$ = (char *)reduce(5, "Dec", @$.first_line, $1, $2, $3);}
+		;
+
+Exp		: Exp ASSIGNOP Exp		{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| Exp AND Exp			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| Exp OR Exp			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| Exp RELOP Exp			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| Exp PLUS Exp			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}	
+		| Exp MINUS Exp			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| Exp STAR Exp			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| Exp DIV Exp			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| LP Exp RP			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| MINUS Exp			{$$ = (char *)reduce(4, "Exp", @$.first_line, $1, $2);}
+		| NOT Exp			{$$ = (char *)reduce(4, "Exp", @$.first_line, $1, $2);}
+		| ID LP Args RP			{$$ = (char *)reduce(6, "Exp", @$.first_line, $1, $2, $3, $4);}
+		| Exp LB Exp RB			{$$ = (char *)reduce(6, "Exp", @$.first_line, $1, $2, $3, $4);}
+		| Exp DOT ID			{$$ = (char *)reduce(5, "Exp", @$.first_line, $1, $2, $3);}
+		| ID				{$$ = (char *)reduce(3, "Exp", @$.first_line, $1);}
+		| INT				{$$ = (char *)reduce(3, "Exp", @$.first_line, $1);}
+		| FLOAT				{$$ = (char *)reduce(3, "Exp", @$.first_line, $1);}
+		| error RP			{printf("( not match"); $$ = (char *)reduce(4, "Exp", @$.first_line, $1);}
+		;
+Args		: Exp COMMA Args		{$$ = (char *)reduce(5, "Args", @$.first_line, $1, $2, $3);}
+		| Exp				{$$ = (char *)reduce(3, "Args", @$.first_line, $1);}
+		;
+
 %%
 yyerror(char *msg){
-	fprintf(stderr, "error: %s\n", msg);
+	fprintf(stderr, "Error type B at Line %d: %s\n", yylineno, msg);
 }
-void reduce1(char *name){
-	$$ = (int)makeLeaf(@$.first_line, ((Leaf *)$1)->valno, 0, name, ((Leaf *)$1)->val);
-	addChild((Leaf *)$$, (Leaf *)$1);
+// len name line, $1...
+Leaf *reduce(int len, ...){
+	va_list ap;
+	va_start(ap, len);
 
-	addTree((Leaf *)$$);
-	delTree((Leaf *)$1);
-}
-void reduce0(char *name){
-	$$ = (int)makeLeaf(@$.first_line, ((Leaf *)$1)->valno, 0, name, ((Leaf *)$1)->val);
-	addTree((Leaf *)$$);
-}
-void reduce2(char *name){
-	$$ = (int)makeLeaf(@$.first_line, ((Leaf *)$1)->valno, 0, name, ((Leaf *)$1)->val);
-	addChild((Leaf *)$$, (Leaf *)$1);
-	addChild((Leaf *)$$, (Leaf *)$2);
+	char *name = va_arg(ap, char *);
+	int line = va_arg(ap, int);
+	Leaf *first = va_arg(ap, Leaf *);
 
-	addTree((Leaf *)$$);
-	delTree((Leaf *)$1);
-	delTree((Leaf *)$2);
-}
-void reduce3(char *name){
-	$$ = (int)makeLeaf(@$.first_line, ((Leaf *)$1)->valno, 0, name, ((Leaf *)$1)->val);
-	addChild((Leaf *)$$, (Leaf *)$1);
-	addChild((Leaf *)$$, (Leaf *)$2);
-	addChild((Leaf *)$$, (Leaf *)$3);
+	Leaf *tmp = makeLeaf(line, first->valno, 0, name, first->val);
+	addChild(tmp, first);
+	delTree(first);
+	int i = 4;
+	for (; i <= len; i ++) {
+		first = va_arg(ap, Leaf *);
+		addChild(tmp, first);
+	}
 
-	addTree((Leaf *)$$);
-	delTree((Leaf *)$1);
-	delTree((Leaf *)$2);
-	delTree((Leaf *)$3);
+	va_end(ap);
+	addTree(tmp);
+	return tmp;
 }
-void reduce4(char *name){
-	$$ = (int)makeLeaf(@$.first_line, ((Leaf *)$1)->valno, 0, name, ((Leaf *)$1)->val);
-	addChild((Leaf *)$$, (Leaf *)$1);
-	addChild((Leaf *)$$, (Leaf *)$2);
-	addChild((Leaf *)$$, (Leaf *)$3);
-	addChild((Leaf *)$$, (Leaf *)$4);
+Leaf *reduce0(char *name, int line){
+	Value v;
+	v.val_int = 0;
+	v.val_double = 0.0;
+	v.val_float = 0.0;
+	memset(v.val_name, 0, 32);
 
-	addTree((Leaf *)$$);
-	delTree((Leaf *)$1);
-	delTree((Leaf *)$2);
-	delTree((Leaf *)$3);
-	delTree((Leaf *)$4);
+	Leaf *tmp = makeLeaf(line, 0, 0, name, v);
+	addTree(tmp);
+	return tmp;
 }
-void reduce5(char *name){
-	$$ = (int)makeLeaf(@$.first_line, ((Leaf *)$1)->valno, 0, name, ((Leaf *)$1)->val);
-	addChild((Leaf *)$$, (Leaf *)$1);
-	addChild((Leaf *)$$, (Leaf *)$2);
-	addChild((Leaf *)$$, (Leaf *)$3);
-	addChild((Leaf *)$$, (Leaf *)$4);
-	addChild((Leaf *)$$, (Leaf *)$5);
 
-	addTree((Leaf *)$$);
-	delTree((Leaf *)$1);
-	delTree((Leaf *)$2);
-	delTree((Leaf *)$3);
-	delTree((Leaf *)$4);
-	delTree((Leaf *)$5);
-}
-void reduce6(char *name){
-	$$ = (int)makeLeaf(@$.first_line, ((Leaf *)$1)->valno, 0, name, ((Leaf *)$1)->val);
-	addChild((Leaf *)$$, (Leaf *)$1);
-	addChild((Leaf *)$$, (Leaf *)$2);
-	addChild((Leaf *)$$, (Leaf *)$3);
-	addChild((Leaf *)$$, (Leaf *)$4);
-	addChild((Leaf *)$$, (Leaf *)$5);
-	addChild((Leaf *)$$, (Leaf *)$6);
-
-	addTree((Leaf *)$$);
-	delTree((Leaf *)$1);
-	delTree((Leaf *)$2);
-	delTree((Leaf *)$3);
-	delTree((Leaf *)$4);
-	delTree((Leaf *)$5);
-	delTree((Leaf *)$6);
-}
