@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "GrammarTree.h"
-//#define YYDEBUG 1
+#include "syntax.tab.h"
+#define YYDEBUG 1
 //extern FILE *yyin;
 //extern Tree *forest;
 int main(int argc, char *argv[]){

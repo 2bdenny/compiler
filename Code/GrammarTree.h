@@ -37,9 +37,13 @@ Leaf *makeLeaf(int line, int valno, int terminal, char *token, Value val);
 int addChild(Leaf *parent, Leaf *child);
 // 展示一棵树
 void display(Leaf *tree, int ntab);
-void displayForest(Tree *f);
+void destroy(Leaf **tree);
+void destroyForest();
+void displayTree(Tree *f);
 // 在森林中增加一棵树
 int addTree(Leaf *tree);
 // 删除一棵树
 int delTree(Leaf *tree);
+
+void meetError();
 #endif

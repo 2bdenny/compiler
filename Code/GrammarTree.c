@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 Tree *forest = NULL;
+int getError = 0;
 
 Leaf *makeLeaf(int line, int valno, int terminal, char *token, Value val){
 	Leaf *x = (Leaf *)malloc(sizeof(Leaf));
@@ -37,9 +38,10 @@ int addChild(Leaf *parent, Leaf *child){
 
 // 展示一棵树
 void display(Leaf *tree, int ntab){
+	if (getError == 1) return;
 	if (tree != NULL) {
 		int i = 0;
-		for (; i < ntab; i ++) printf("\t");
+		for (; i < ntab; i ++) printf("  ");
 		if (tree->terminal == 0) printf("%s (%d)\n", tree->token, tree->line);
 		else{
 			printf("%s", tree->token);
@@ -78,32 +80,54 @@ int addTree(Leaf *tree){
 }
 // 删除一棵树
 int delTree(Leaf *tree){
-//	printf("del tree %ld\n", (long)tree);
+//	printf("del tree %s\n", tree->token);
 	Tree *prev = NULL;
 	Tree *tmp = forest;
 	if (tmp == NULL) return false;
-	while (tmp->tree != tree) {
-		if (tmp->next == NULL) return false;
-		else {
-			prev = tmp;
-			tmp = tmp->next;
-		}
-	}
-	if (prev == NULL) {
-		forest = forest->next;
-		free(tmp);
-		return true;
-	}
 	else {
-		prev->next = tmp->next;
-		free(tmp);
-		return true;
+		while (tmp->tree != tree) {
+			if (tmp->next == NULL) return false;
+			else {
+				prev = tmp;
+				tmp = tmp->next;
+			}
+		}
+		if (prev == NULL) {
+			forest = forest->next;
+			free(tmp);
+			return true;
+		}
+		else {
+			prev->next = tmp->next;
+			free(tmp);
+			return true;
+		}
 	}
 	return false;
 }
-void displayForest(Tree *f){
+void displayTree(Tree *f){
 	while (f != NULL){
 		printf("%s\n", (f->tree)->token);
 		f = f->next;
+	}
+}
+void meetError(){
+	getError = 1;
+}
+void destroy(Leaf **tree){
+	Leaf *tmp = *tree;
+	if (tmp == NULL) return;
+	//display(*tree, 0);
+	if (tmp->left != NULL) destroy(&(tmp->left));
+	if (tmp->right != NULL) destroy(&(tmp->right));
+	free(tmp);
+	*tree = NULL;
+}
+void destroyForest(){
+	while (forest != NULL){
+		Tree *tmp = forest;
+		forest = forest->next;
+		destroy(&(tmp->tree));
+		free(tmp);
 	}
 }

@@ -34,7 +34,7 @@
 # define YY_YY_SYNTAX_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -57,22 +57,33 @@ extern int yydebug;
     MINUS = 267,
     DIV = 268,
     STAR = 269,
-    AND = 270,
-    OR = 271,
-    NOT = 272,
-    TYPE = 273,
-    LP = 274,
-    RP = 275,
-    LB = 276,
-    RB = 277,
-    LC = 278,
-    RC = 279,
-    STRUCT = 280,
-    RETURN = 281,
-    IF = 282,
-    ELSE = 283,
-    WHILE = 284,
-    LOWER_THAN_ELSE = 285
+    HIGH_MINUS = 270,
+    AND = 271,
+    OR = 272,
+    NOT = 273,
+    TYPE = 274,
+    LP = 275,
+    RP = 276,
+    LB = 277,
+    RB = 278,
+    LC = 279,
+    RC = 280,
+    STRUCT = 281,
+    RETURN = 282,
+    IF = 283,
+    ELSE = 284,
+    WHILE = 285,
+    EDF_ERR = 286,
+    VDC_ERR = 287,
+    COM_ERR = 288,
+    STR_ERR = 289,
+    STM_ERR = 290,
+    FUN_ERR = 291,
+    RB_ERR = 292,
+    RP_ERR = 293,
+    DEF_ERR = 294,
+    LL_THAN_ELSE = 295,
+    LOWER_THAN_ELSE = 296
   };
 #endif
 
