@@ -37,3 +37,6 @@ scanner
 *.pdf
 *~
 *.yy.c
+*.tab.c
+*.tab.h
+
