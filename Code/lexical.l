@@ -1,65 +1,75 @@
 %option yylineno
 %{
-//	#include "syntax.tab.h"
+	#define YYSTYPE char*
+	#include "syntax.tab.h"
 	#include "GrammarTree.h"
 	int yycolumn = 1;
-/*	#define YY_USER_ACTION
-		yylloc.first_line = yylloc.last_line = yylineno; \
-		yylloc.first_column = yycolumn; \
-		yylloc.last_column = yycolumn + yyleng-1; \
-		yycolumn += yyleng;*/
+	#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng-1;yycolumn += yyleng;
+void plantINT(int radix);
+void plantFLOAT();
+void plantID();
+void plantRELOP();
+void plantKEY(char *name);
+void plantSYMBOL(char *syb);
+int oct2int(char *oct, int leng);
+int hex2int(char *hex, int leng);
 %}
 /* regex */
-nl	[\n]
-ws	[ \t\n]+
+nl	[\r]?\n
+ws	{nl}+|[ \t\n]+
 letter	[A-Za-z_]
 digit8	[0-7]
 digit10	[0-9]
 digit16	[0-9A-Fa-f]
 int8	-?0(0|[1-7]{digit8}*)
 int10	-?(0|[1-9]{digit10}*)
-int16	-?0x(0|[1-9A-Fa-f]{digit16}*)
+int16	-?0[xX](0|[1-9A-Fa-f]{digit16}*)
+err16	-?0[xX][0-9A-Za-z]*
+err8	-?0[0-9A-WYZa-wyz][0-9A-Za-z]*
 id	{letter}({letter}|{digit10})*
 float	{int10}(\.{digit10}+)?([Ee]{int10})?
 
 %%
-{ws}	{/*no action*/}
-if	{printf("IF\n");	int yylval = plantKEY("IF");/*	return IF;*/}
-else	{printf("ELSE\n");	yylval = plantKEY("ELSE");/*	return ELSE;*/}
-int	{printf("TYPE\n");	yylval = plantKEY("int");/*	return TYPE;*/}
-float	{printf("TYPE\n");	yylval = plantKEY("float");/*	return TYPE;*/}
-struct 	{printf("STRUCT\n");	yylval = plantKEY("STRUCT");/*	return STRUCT;*/}
-return	{printf("RETURN\n");	yylval = plantKEY("RETURN");/*	return RETURN;*/}
-while	{printf("WHILE\n");	yylval = plantKEY("WHILE");/*	return WHILE;*/}
-{id}	{printf("ID\n");	yylval = plantID();	/*	return ID;*/}
-{int8}	{printf("INT\n");	yylval = plantINT(8);	/*	return INT;*/}
-{int10}	{printf("INT\n");	yylval = plantINT(10);	/*	return INT;*/}
-{int16}	{printf("INT\n");	yylval = plantINT(16);	/*	return INT;*/}
-{float}	{printf("FLOAT\n");	yylval = plantFLOAT();	/*	return FLOAT;*/}
-";"	{printf("SEMI\n");	yylval = plantSYMBOL("SEMI");/*	return SEMI;*/}
-","	{printf("COMMA\n");	yylval = plantSYMBOL("COMMA");/*	return COMMA;*/}
-"="	{printf("ASSIGNOP\n");	yylval = plantSYMBOL("ASSIGNOP");/*	return ASSIGNOP;*/}
-"+"	{printf("PLUS\n");	yylval = plantSYMBOL("PLUS");/*	return PLUS;*/}
-"-"	{printf("MINUS\n");	yylval = plantSYMBOL("MINUS");/*	return MINUS;*/}
-"*"	{printf("STAR\n");	yylval = plantSYMBOL("STAR");/*	return STAR;*/}
-"/"	{printf("DIV\n");	yylval = plantSYMBOL("DIV");/*	return DIV;*/}
-"&&"	{printf("AND\n");	yylval = plantSYMBOL("AND");/*	return AND;*/}
-"||"	{printf("OR\n");	yylval = plantSYMBOL("OR");/*	return OR;*/}
-"!"	{printf("NOT\n");	yylval = plantSYMBOL("NOT");/*	return NOT;*/}
-"."	{printf("DOT\n");	yylval = plantSYMBOL("DOT");/*	return DOT;*/}
-"("	{printf("LP\n");	yylval = plantSYMBOL("LP");/*	return LP;*/}
-")"	{printf("RP\n");	yylval = plantSYMBOL("RP");/*	return RP;*/}
-"["	{printf("LB\n");	yylval = plantSYMBOL("LB");/*	return LB;*/}
-"]"	{printf("RB\n");	yylval = plantSYMBOL("RB");/*	return RB;*/}
-"{"	{printf("LC\n");	yylval = plantSYMBOL("LC");/*	return LC;*/}
-"}"	{printf("RC\n");	yylval = plantSYMBOL("RC");/*	return RC;*/}
-"<"	{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
-"<="	{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
-"=="	{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
-"<>"	{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
-">"	{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
-">="	{printf("RELOP\n");	yylval = plantRELOP();	/*	return RELOP;*/}
-.	{printf("Error type A at Line %d: Mysterious Character %s\n", yylineno, yytext);}
+{ws}	{/*no action and no return*/}
+if	{ plantKEY("IF"); return IF;}
+else	{ plantKEY("ELSE"); return ELSE;}
+int	{ plantKEY("int"); return TYPE;}
+float	{ plantKEY("float"); return TYPE;}
+struct 	{ plantKEY("STRUCT"); return STRUCT;}
+return	{ plantKEY("RETURN"); return RETURN;}
+while	{ plantKEY("WHILE"); return WHILE;}
+{id}	{ plantID(); return ID;}
+{int8}	{ plantINT(8); return INT;}
+{err8}	{ printf("Error type A at Line %d: Error OCT \"%s\"\n", yylineno, yytext); plantINT(0); meetError(); return INT;}
+{int10}	{ plantINT(10); return INT;}
+{int16}	{ plantINT(16); return INT;}
+{err16}	{ printf("Error type A at Line %d: Error HEX \"%s\"\n", yylineno, yytext); plantINT(0); meetError(); return INT;}
+{float}	{ plantFLOAT(); return FLOAT;}
+";"	{ plantSYMBOL("SEMI"); return SEMI;}
+","	{ plantSYMBOL("COMMA"); return COMMA;}
+"="	{ plantSYMBOL("ASSIGNOP"); return ASSIGNOP;}
+"+"	{ plantSYMBOL("PLUS"); return PLUS;}
+"-"	{ plantSYMBOL("MINUS"); return MINUS;}
+"*"	{ plantSYMBOL("STAR"); return STAR;}
+"/"	{ plantSYMBOL("DIV"); return DIV;}
+"&&"	{ plantSYMBOL("AND"); return AND;}
+"||"	{ plantSYMBOL("OR"); return OR;}
+"!"	{ plantSYMBOL("NOT"); return NOT;}
+"."	{ plantSYMBOL("DOT"); return DOT;}
+"("	{ plantSYMBOL("LP"); return LP;}
+")"	{ plantSYMBOL("RP"); return RP;}
+"["	{ plantSYMBOL("LB"); return LB;}
+"]"	{ plantSYMBOL("RB"); return RB;}
+"{"	{ plantSYMBOL("LC"); return LC;}
+"}"	{ plantSYMBOL("RC"); return RC;}
+"<"	{ plantRELOP(); return RELOP;}
+"<="	{ plantRELOP(); return RELOP;}
+"=="	{ plantRELOP(); return RELOP;}
+"<>"	{ plantRELOP(); return RELOP;}
+">"	{ plantRELOP(); return RELOP;}
+">="	{ plantRELOP(); return RELOP;}
+.	{ printf("Error type A at Line %d: Mysterious Character \"%s\"\n", yylineno, yytext); meetError();}
+
 %%
 int main(int argc, char **argv){
 	if (argc > 1){
@@ -69,97 +79,139 @@ int main(int argc, char **argv){
 	}
 	return 1;
 }
-int plantINT(int radix){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 1;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memcpy(tmp->token, "INT", 3);
+void plantINT(int radix){
+	Value vl;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
+	int valno = 1;
 	switch(radix){
-		case 8: tmp->val.val_int = atoi(yytext+1);
-		case 10: tmp->val.val_int = atoi(yytext);
-		case 16: tmp->val.val_int = atoi(yytext+2);
+		case 0: {memcpy(vl.val_name, yytext, yyleng); valno = 3;} break;
+		case 8: vl.val_int = oct2int(yytext, yyleng); break;
+		case 10: vl.val_int = atoi(yytext); break;
+		case 16: vl.val_int = hex2int(yytext, yyleng); break;
+		default: vl.val_int = 0; break;
 	}
-	tmp->left = NULL;
-	tmp->right = NULL;
+	Leaf *tmp = makeLeaf(yylineno, valno, 1, "INT", vl);
 
+	yylval = (char *)tmp;
 	addTree(tmp);
 	return (int)tmp;
 }
-int plantFLOAT(){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 0;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memcpy(tmp->token, "FLOAT", 5);
-	tmp->val.val_double = atof(yytext);
-	tmp->left = NULL;
-	tmp->right = NULL;
+void plantFLOAT(){
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = atof(yytext);
+	vl.val_float = atof(yytext);
+	memset(vl.val_name, 0, 32);
 
+	Leaf *tmp = makeLeaf(yylineno, 0, 1, "FLOAT", vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 	return (int)tmp;
 }
-int plantID(){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 3;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memcpy(tmp->token, "ID", 2);
-	memset(tmp->val.val_name, 0, 32);
-	memcpy(tmp->val.val_name, yytext, yyleng);
-	tmp->left = NULL;
-	tmp->right = NULL;
+void plantID(){
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
+	memcpy(vl.val_name, yytext, yyleng);
 
+	Leaf *tmp = makeLeaf(yylineno, 3, 1, "ID", vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 	return (int)tmp;
 }
-int plantKEY(char *name) {
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memset(tmp->val.val_name, 0, 32);
+void plantKEY(char *name) {
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
+
+	Leaf *tmp = NULL;
+	makeLeaf(yylineno, 3, 1, "ID", vl);
 	switch(name[0]){
 		case 'i': 
-		case 'f':{memcpy(tmp->token, "TYPE", 4); memcpy(tmp->val.val_name, yytext, yyleng); tmp->valno = 3;} break;
-		default: {memcpy(tmp->token, name, strlen(name)); tmp->valno = -1;} break;
+		case 'f':{memcpy(vl.val_name, name, strlen(name)); tmp = makeLeaf(yylineno, 3, 1, "TYPE", vl);} break;
+		default: {tmp = makeLeaf(yylineno, -1, 1, name, vl);} break;
 	}
-	memcpy(tmp->token, name, strlen(name));
-	tmp->left = NULL;
-	tmp->right = NULL;
-
+	yylval = (char *)tmp;
 	addTree(tmp);
 	return (int)tmp;
 }
-int plantSYMBOL(char *syb){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = -1;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memset(tmp->val.val_name, 0, 32);
-	memcpy(tmp->token, syb, strlen(syb));
-	tmp->left = NULL;
-	tmp->right = NULL;
+void plantSYMBOL(char *syb){
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
 
+	Leaf *tmp = makeLeaf(yylineno, -1, 1, syb, vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 	return (int)tmp;
 }
-int plantRELOP(){
-	Leaf *tmp = (Leaf *)malloc(LEAF_LEN);
-	tmp->line = yylineno;
-	tmp->valno = 3;
-	tmp->terminal = 1;
-	memset(tmp->token, 0, 20);
-	memset(tmp->val.val_name, 0, 32);
-	memcpy(tmp->token, "RELOP", 5);
-	memcpy(tmp->val.val_name, yytext, yyleng);
-	tmp->left = NULL;
-	tmp->right = NULL;
+void plantRELOP(){
+	Value vl;
+	vl.val_int = 0;
+	vl.val_double = 0.0;
+	vl.val_float = 0.0;
+	memset(vl.val_name, 0, 32);
+	memcpy(vl.val_name, yytext, yyleng);
 
+	Leaf *tmp = makeLeaf(yylineno, 3, 1, "RELOP", vl);
+	yylval = (char *)tmp;
 	addTree(tmp);
 	return (int)tmp;
+}
+int hex2int(char *hex, int leng){
+	if (leng < 3) return -1;
+	else {
+		int result = 0;
+		int ex = 1;
+		int i = leng-1;
+		int limit;
+		if (hex[0] == '-') limit = 2;
+		else limit = 1;
+		while (i > limit) {
+			if (hex[i] >= '0' && hex[i] <= '9'){
+				result += (hex[i]-'0')*ex;
+			}
+			else if (hex[i] >= 'a' && hex[i] <= 'f'){
+				result += (hex[i]-'a'+10)*ex;
+			}
+			else if (hex[i] >= 'A' && hex[i] <= 'F'){
+				result += (hex[i]-'A'+10)*ex;
+			}
+			else return -1;
+			i --;
+			ex *= 16;
+		}
+		if (limit == 1) return result;
+		else return -result;
+	}
+}
+
+int oct2int(char *oct, int leng){
+	if (leng < 2) return -1;
+	else {
+		int result = 0;
+		int ex = 1;
+		int i = leng-1;
+		int limit;
+		if (oct[0] == '-') limit = 1;
+		else limit = 0;
+		while (i > limit){
+			if (oct[i] >= '0' && oct[i] <= '7') {
+				result += (oct[i] - '0')*ex;
+			}
+			else return -1;
+			i --;
+			ex *= 8;
+		}
+		if (limit == 0) return result;
+		else return -result;
+	}
 }

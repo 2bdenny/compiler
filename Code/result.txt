@@ -1,0 +1,3 @@
+Expect ( or VarList
+Expect TYPE or ID
+Expect ; or StmtList before '}'
