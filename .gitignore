@@ -35,3 +35,5 @@ scanner
 *.cmm
 *.chm
 *.pdf
+*~
+*.yy.c
