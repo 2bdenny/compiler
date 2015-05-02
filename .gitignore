@@ -39,4 +39,4 @@ scanner
 *.yy.c
 *.tab.c
 *.tab.h
-
+*.txt
