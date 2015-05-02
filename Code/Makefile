@@ -5,8 +5,8 @@ lex.yy.c: lexical.l
 	flex lexical.l
 syntax.tab.h syntax.tab.c syntax.output: syntax.y
 	bison -d -t -v syntax.y
-../parser: main.c GrammarTree.c syntax.tab.c
-	cc main.c GrammarTree.c syntax.tab.c -o ../parser -g
+../parser: main.c GrammarTree.c syntax.tab.c stack.c
+	cc main.c GrammarTree.c syntax.tab.c stack.c -o ../parser -g
 
 clean:
-	rm *.yy.c *.tab.c *.tab.h *.output ../parser
+	rm -rf *.yy.c *.tab.c *.tab.h *.output *.out ../parser
