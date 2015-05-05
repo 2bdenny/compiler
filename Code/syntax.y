@@ -1,12 +1,12 @@
 %{
 #define YYSTYPE char*
+#define YYDEBUG 1
 #include <stdarg.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "lex.yy.c"
 #include "GrammarTree.h"
-//#define YYDEBUG 1
 Leaf *reduce(int len, ...);
 Leaf *reduce0(char *name, int line);
 %}
@@ -42,7 +42,7 @@ Leaf *reduce0(char *name, int line);
 %right NOT HIGH_MINUS
 %left LP RP LB RB DOT
 %%
-Program		: ExtDefList			{$$ = (char *)reduce(3, "Program", @$.first_line, $1); display((Leaf *)($$), 0); /*destroyForest();*/}
+Program		: ExtDefList			{$$ = (char *)reduce(3, "Program", @$.first_line, $1); /*display((Leaf *)($$), 0); destroyForest();*/}
 		;
 ExtDefList	: ExtDef ExtDefList		{$$ = (char *)reduce(4, "ExtDefList", @$.first_line, $1, $2);}
 		| /* empty */			{$$ = (char *)reduce0("ExtDefList", @$.first_line);}
@@ -153,7 +153,8 @@ Leaf *reduce(int len, ...){
 	int line = va_arg(ap, int);
 	Leaf *first = va_arg(ap, Leaf *);
 
-	Leaf *tmp = makeLeaf(line, first->valno, 0, name, first->val);
+	// 非终结符的valno=-1
+	Leaf *tmp = makeLeaf(line, -1, 0, name, first->val);
 	addTree(tmp);
 	addChild(tmp, first);
 	delTree(first);
@@ -174,7 +175,8 @@ Leaf *reduce0(char *name, int line){
 	v.val_float = 0.0;
 	memset(v.val_name, 0, 32);
 
-	Leaf *tmp = makeLeaf(line, 0, 0, name, v);
+	// 非终结符的valno=-1
+	Leaf *tmp = makeLeaf(line, -1, 0, name, v);
 	addTree(tmp);
 	return tmp;
 }

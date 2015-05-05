@@ -124,7 +124,6 @@ void plantKEY(char *name) {
 	memset(vl.val_name, 0, 32);
 
 	Leaf *tmp = NULL;
-	makeLeaf(yylineno, 3, 1, "ID", vl);
 	switch(name[0]){
 		case 'i': 
 		case 'f':{memcpy(vl.val_name, name, strlen(name)); tmp = makeLeaf(yylineno, 3, 1, "TYPE", vl);} break;

@@ -40,3 +40,4 @@ scanner
 *.tab.c
 *.tab.h
 *.txt
+*.swp

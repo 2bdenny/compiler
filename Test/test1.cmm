@@ -1,5 +1,11 @@
+struct A{
+	int a;
+	int b;
+};
+
 int main()
 {
 	int i = 1;
 	int j = 2;
+	struct A d;
 }

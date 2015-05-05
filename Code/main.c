@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include "GrammarTree.h"
 #include "syntax.tab.h"
-#define YYDEBUG 1
+#include "SDT.h"
+//#define YYDEBUG 1
 //extern FILE *yyin;
 extern Tree *forest;
 int main(int argc, char *argv[]){
@@ -16,7 +17,10 @@ int main(int argc, char *argv[]){
 //		yydebug = 1;
 		yyparse();
 		fclose(f);
+		display(forest->tree, 0);
+//		analysis(forest->tree);
+		destroyForest();
 	}
-	else printf("Usage: ./scanner *.chm\n");
+	else printf("Usage: ./paser *.cmm\n");
 	return 0;
 }
