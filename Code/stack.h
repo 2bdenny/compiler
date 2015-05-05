@@ -23,7 +23,7 @@ void *top();
 bool isEmpty();
 bool isFull();
 int size();
-void display();
+void displayStack();
 void clear();
 
 #endif

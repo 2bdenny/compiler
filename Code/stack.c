@@ -55,7 +55,7 @@ bool isFull(){
 int size(){
 	return stackSize;
 }
-void display(){
+void displayStack(){
 	int i;
 	sNode *trace = tableStack;
 	for (i = stackSize; i > 0; i --){

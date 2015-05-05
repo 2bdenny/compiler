@@ -42,7 +42,7 @@ Leaf *reduce0(char *name, int line);
 %right NOT HIGH_MINUS
 %left LP RP LB RB DOT
 %%
-Program		: ExtDefList			{$$ = (char *)reduce(3, "Program", @$.first_line, $1); display((Leaf *)($$), 0); destroyForest();}
+Program		: ExtDefList			{$$ = (char *)reduce(3, "Program", @$.first_line, $1); display((Leaf *)($$), 0); /*destroyForest();*/}
 		;
 ExtDefList	: ExtDef ExtDefList		{$$ = (char *)reduce(4, "ExtDefList", @$.first_line, $1, $2);}
 		| /* empty */			{$$ = (char *)reduce0("ExtDefList", @$.first_line);}
