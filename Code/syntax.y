@@ -60,7 +60,7 @@ ExtDecList	: VarDec			{$$ = (char *)reduce(3, "ExtDecList", @$.first_line, $1);}
 Specifier	: TYPE				{$$ = (char *)reduce(3, "Specifier", @$.first_line, $1);}
 		| StructSpecifier		{$$ = (char *)reduce(3, "Specifier", @$.first_line, $1);}
 		;
-StructSpecifier	: STRUCT OptTag LC DefList RC	{$$ = (char *)reduce(6, "StructSpecifier", @$.first_line, $1, $2, $3, $4);}
+StructSpecifier	: STRUCT OptTag LC DefList RC	{$$ = (char *)reduce(7, "StructSpecifier", @$.first_line, $1, $2, $3, $4, $5);}
 		| STRUCT Tag			{$$ = (char *)reduce(4, "StructSpecifier", @$.first_line, $1, $2);}
 		| error RC %prec STR_ERR	{$$ = (char *)reduce0("StructSpecifier", @$.first_line); meetError(); printf("struct error\n");}
 

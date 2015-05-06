@@ -2,10 +2,12 @@ struct A{
 	int a;
 	int b;
 };
-
+int to, from;
 int main()
 {
+	int k[3][4][5];
 	int i = 1;
 	int j = 2;
 	struct A d;
+	return 0;
 }
