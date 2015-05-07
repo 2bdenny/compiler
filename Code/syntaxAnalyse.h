@@ -1,9 +1,10 @@
-#ifndef SDT_H_
-#define SDT_H_
+#ifndef SYNTAXANALYSE_H_
+#define SYNTAXANALYSE_H_
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "GrammarTree.h"
+
 #define ID_MAX_LEN 33
 #define bool int
 #define true 1
@@ -49,9 +50,7 @@ typedef struct item{
 	struct item *next;		//下一个表项
 } Item;
 
-
-//Item *makeItem(Leaf *leaf, Item* tmp);
-//bool insertItem(Item *table, Item *me);
-//void displayTable(int ct, Item *table);
-void analysis(Leaf *tree);
+void displayTable(Item *table);
+void analyse(Leaf *tree, Item *scope);
+void insertTable(Item *it);
 #endif

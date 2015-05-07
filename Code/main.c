@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include "GrammarTree.h"
 #include "syntax.tab.h"
-#include "SDT.h"
+#include "syntaxAnalyse.h"
 //#define YYDEBUG 1
 //extern FILE *yyin;
 extern Tree *forest;
+extern Item *table;
 int main(int argc, char *argv[]){
 //	forest = NULL;
 	if (argc > 1) {
@@ -17,8 +18,10 @@ int main(int argc, char *argv[]){
 //		yydebug = 1;
 		yyparse();
 		fclose(f);
-		display(forest->tree, 0);
-//		analysis(forest->tree);
+//		display(forest->tree, 0);
+		analyse(forest->tree, NULL);
+		printf("\n\n\n\n\n\n");
+		displayTable(table);
 		destroyForest();
 	}
 	else printf("Usage: ./paser *.cmm\n");
