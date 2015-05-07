@@ -19,9 +19,11 @@ int main(int argc, char *argv[]){
 		yyparse();
 		fclose(f);
 //		display(forest->tree, 0);
-		analyse(forest->tree, NULL);
+		analyse(forest->tree);
 		printf("\n\n\n\n\n\n");
 		displayTable(table);
+
+		analyseGrammer(forest->tree);
 		destroyForest();
 	}
 	else printf("Usage: ./paser *.cmm\n");

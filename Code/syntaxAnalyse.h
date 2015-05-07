@@ -51,6 +51,6 @@ typedef struct item{
 } Item;
 
 void displayTable(Item *table);
-void analyse(Leaf *tree, Item *scope);
+void analyse(Leaf *tree);
 void insertTable(Item *it);
 #endif

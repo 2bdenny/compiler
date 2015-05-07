@@ -64,16 +64,29 @@ bool contain(Item *it){
 	if (it == NULL) return false;
 	Item *trace = table;
 	while (trace != NULL){
-		if (cmp(trace->name, it->name) == 0/* || cmp(trace->type_name, it->name) == 0 || cmp(trace->name, it->type_name) == 0*/) return true;
+		if (trace->type == TYPE_STRUCT){
+			if (it->type == TYPE_STRUCT) {
+				if (cmp(trace->type_name, it->type_name) == 0) return true;
+			}
+			else {
+				if (cmp(trace->type_name, it->name) == 0) return true;
+			}
+		}
+		else {
+			if (it->type == TYPE_STRUCT) {
+				if (cmp(trace->name, it->type_name) == 0) return true;
+			}
+			else {
+				if (cmp(trace->name, it->name) == 0) return true;
+			}
+		}
 		trace = trace->next;
 	}
 	return false;
 }
-void analyse(Leaf *tree, Item *scope){
-	printf("tree=0x%lx, scope=0x%lx\n", tree, scope);
-	if (tree != NULL) printf(" token=%s\n", tree->token);
-	if (cur_item != NULL) printf("type=%d, type_name=%s, ret_type=%d, ret_type_name=%s, name=%s, line=%d\n", cur_item->type, cur_item->type_name, cur_item->ret_type, cur_item->ret_type_name, cur_item->name, cur_item->line);
-
+void analyse(Leaf *tree){
+//	printf("START: tree=0x%lx, scope=0x%lx\n", tree, cur_scope);
+//	if (tree != NULL) printf(" token=%s\n", tree->token);
 	if (tree == NULL) return;
 	else if (cmp(tree->token, "Program") == 0) {
 	}
@@ -87,7 +100,6 @@ void analyse(Leaf *tree, Item *scope){
 		cur_item = (Item *)malloc(sizeof(Item));
 		initItem(cur_item);
 
-		cur_item->scope = scope;
 		if (cmp(tree->val.val_name, "int") == 0) cur_item->type = TYPE_VAR_INT;
 		else if (cmp(tree->val.val_name, "float") == 0) cur_item->type = TYPE_VAR_FLOAT;
 	}
@@ -97,7 +109,7 @@ void analyse(Leaf *tree, Item *scope){
 		cur_item = (Item *)malloc(sizeof(Item));
 		initItem(cur_item);
 
-		cur_item->scope = scope;
+		cur_item->scope = cur_scope;
 		cur_item->type = TYPE_STRUCT;
 	}
 	else if (cmp(tree->token, "OptTag") == 0){
@@ -105,53 +117,64 @@ void analyse(Leaf *tree, Item *scope){
 	else if (cmp(tree->token, "ID") == 0){
 		// struct A a
 		// struct A
-		if (cur_item->type == TYPE_STRUCT){
-			// 结构体类型变量的定义
-			if (strlen(cur_item->type_name) > 0) {
-				// struct {int a;} c;
-				if (!contain(cur_item)) {
-					insertTable(cur_item);
+		if (cur_item != NULL){
+			if (cur_item->type == TYPE_STRUCT){
+				// 结构体类型变量的定义
+				if (strlen(cur_item->type_name) > 0) {
+					// struct {int a;} c;
+					// struct A{int b;} c;
+					if (!contain(cur_item)) {
+						insertTable(cur_item);
 
-					cur_item = (Item *)malloc(sizeof(Item));
-					initItem(cur_item);
-					cur_item->scope = tail->scope;
-					cur_item->type = TYPE_VAR_STRUCT;
-					cpy(cur_item->type_name, tail->type_name);
-					cpy(cur_item->name, tree->val.val_name);
-					cur_item->line = tree->line;
-					cur_item->dimension = 0;
+						cur_item = (Item *)malloc(sizeof(Item));
+						initItem(cur_item);
+						cur_item->scope = tail->scope;
+						cur_item->type = TYPE_VAR_STRUCT;
+						cpy(cur_item->type_name, tail->type_name);
+						cpy(cur_item->name, tree->val.val_name);
+						cur_item->line = tree->line;
+						cur_item->dimension = 0;
+					}
+					// struct A c;
+					else {
+						Item *tmp = cur_item;
+
+						cur_item = (Item *)malloc(sizeof(Item));
+						initItem(cur_item);
+						cur_item->scope = tmp->scope;
+						cur_item->type = TYPE_VAR_STRUCT;
+						cpy(cur_item->type_name, tmp->type_name);
+						cpy(cur_item->name, tree->val.val_name);
+						cur_item->line = tree->line;
+						cur_item->dimension = 0;
+					}
 				}
-				// struct a {int b;} c;
-				// struct A c;
+				// 结构体定义
 				else {
-					cur_item->type = TYPE_VAR_STRUCT;
-					cpy(cur_item->name, tree->val.val_name);
 					cur_item->line = tree->line;
-					cur_item->dimension = 0;
-				}
-				cur_item->type = TYPE_VAR_STRUCT;
-				cpy(cur_item->name, tree->val.val_name);
-			}
-			// 结构体定义
-			else {
-				cur_item->line = tree->line;
-				cpy(cur_item->type_name, tree->val.val_name);
+					cpy(cur_item->type_name, tree->val.val_name);
 
-				if (!contain(cur_item))
-					insertTable(cur_item);
+					if (!contain(cur_item))
+						insertTable(cur_item);
+				}
 			}
-		}
-		// 变量定义
-		else if (cur_item->type == TYPE_VAR_INT || cur_item->type == TYPE_VAR_FLOAT){
-			cur_item->line = tree->line;
-			cpy(cur_item->name, tree->val.val_name);
-			cur_item->dimension = 0;
+			// 变量定义
+			else if (cur_item->type == TYPE_VAR_INT || cur_item->type == TYPE_VAR_FLOAT){
+				if (strlen(cur_item->name) == 0){
+					cur_item->line = tree->line;
+					cpy(cur_item->name, tree->val.val_name);
+					cur_item->dimension = 0;
+				} 
+			}
 		}
 	}
 	// 函数或结构体内部定义开始
 	else if (cmp(tree->token, "LC") == 0){
 		if (cur_item != NULL){
-			if (cur_item->type == TYPE_STRUCT) cur_scope = cur_item;
+			if (cur_item->type == TYPE_STRUCT) {
+				if (!contain(cur_item)) insertTable(cur_item);
+				cur_scope = cur_item;
+			}
 			// 结构体内部定义开始
 			// struct {}; 这种结构体没有名字的情况
 			if (cur_item->type == TYPE_VAR_STRUCT && !contain(cur_item)){
@@ -175,12 +198,14 @@ void analyse(Leaf *tree, Item *scope){
 	// 函数或结构体内部定义结束
 	else if (cmp(tree->token, "RC") == 0){
 		// 函数定义结束
-		if (cur_item == NULL) cur_scope = NULL;
+/*		if (cur_item == NULL) cur_scope = NULL;
 		// 结构体定义结束
 		else if (cur_item->scope != NULL && cur_item->scope->type == TYPE_STRUCT) {
 			cur_scope = cur_item->scope;
 			cur_item = cur_scope;
-		}
+		}*/
+		cur_scope = tail->scope;
+		cur_item = cur_scope;
 	}
 	else if (cmp(tree->token, "Tag") == 0){
 	}
@@ -245,6 +270,9 @@ void analyse(Leaf *tree, Item *scope){
 		insertTable(cur_item);
 		cur_scope = cur_item;
 	}
-	analyse(tree->left, scope);
-	analyse(tree->right, scope);
+//	printf("END: tree=0x%lx, scope=0x%lx\n", tree, cur_scope);
+//	if (tree != NULL) printf(" token=%s\n", tree->token);
+//	if (cur_item != NULL) printf("addr=%lx, scope=%lx, type_name=%s, ret_type_name=%s, name=%s\n", cur_item, cur_item->scope, cur_item->type_name, cur_item->ret_type_name, cur_item->name);
+	analyse(tree->left);
+	analyse(tree->right);
 }
