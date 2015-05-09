@@ -123,6 +123,11 @@ StructSpecifier	: STRUCT OptTag LC{
 			((Item *)$$)->type = TYPE_VAR_STRUCT;
 			cpy(((Item *)$$)->type_name,((Item *)$2)->type_name);
 			((Item *)$$)->scope = getScope();
+
+			Item *exister = getItem(((Item *)$$)->type_name);
+			if (exister == NULL){
+				printf("Error type 17 at Line %d: struct %s undefined\n", ((Leaf *)$1)->line, ((Item *)$$)->type_name);
+			}
 		}
 		| error RC %prec STR_ERR{}
 		;
@@ -290,6 +295,9 @@ Dec		: VarDec{
 		| VarDec {
 			$$ = $1;
 		  }ASSIGNOP Exp {
+			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT)){
+				  printf("Error type 15 at Line %d: can not = in struct\n", ((Item *)$1)->line);
+			  }
 			  $$ = $1;
 			  ((Item *)$1)->type = getType($3);
 			  cpy(((Item *)$1)->type_name, ((Item *)$3)->type_name);
@@ -387,7 +395,18 @@ Exp		: Exp ASSIGNOP Exp {
 			  }
 		  }
 		| Exp LB Exp RB			{}
-		| Exp DOT ID			{}
+		| Exp DOT ID {
+			Item *exp = (Item *)$1;
+			if (exp->type != TYPE_STRUCT || exp->type != TYPE_VAR_STRUCT) {
+				printf("Error type 13 at Line %d: %s not a struct\n", ((Leaf *)$2)->line, exp->name);
+			}
+			else {
+				Item *component = getItem(exp->name);
+				if (component == NULL || component->scope != exp) {
+					printf("Error type 14 at Line %d: %s not %s 's component\n", ((Leaf *)$2)->line, component->name, exp->type_name);
+				}
+			}
+		  }
 		| ID { 
 			if (!isContain(((Leaf *)$1)->val.val_name)) 
 				printf("Error type 1 at Line %d: var %s undefined\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);

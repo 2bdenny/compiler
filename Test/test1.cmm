@@ -1,5 +1,5 @@
 struct A{
-	int a;
+	int a=0;
 	int b;
 	struct B{
 		int z[2][4];
@@ -13,6 +13,10 @@ int hello(){
 	return 1;
 }
 int to, from;
+struct to{
+	int toa;
+};
+struct A ab;
 int main()
 {
 	struct A d;
@@ -26,6 +30,9 @@ int main()
 	j || j;
 	1 = i;
 	i();
+	i.a;
+	ab.ac;
+	ab.a;
 	hello();
 	return 0;
 }

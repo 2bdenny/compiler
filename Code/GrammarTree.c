@@ -173,7 +173,7 @@ Item *newItem(){
 void insertTable(Item *x){
 	if (x != NULL){
 		if (x->type == TYPE_STRUCT && isContain(x->type_name)) {
-			printf("Error type 3 at Line %d: struct %s name has been used\n", x->line, x->type_name);
+			printf("Error type 16 at Line %d: struct %s name has been used\n", x->line, x->type_name);
 			return;
 		}
 		else if (x->type == TYPE_FUNCTION && isContain(x->name)){
@@ -223,7 +223,7 @@ Item *getItem(char *name){
 	if (name == NULL) return NULL;
 	Item *trace = table;
 	while (trace != NULL){
-		if (cmp(trace->name, name) == 0) return trace;
+		if ((cmp(trace->name, name) == 0) || (cmp(trace->type_name, name) == 0)) return trace;
 		trace = trace->next;
 	}
 	return NULL;
