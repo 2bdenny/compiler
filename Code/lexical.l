@@ -3,9 +3,8 @@
 	#define YYSTYPE char*
 	#include "syntax.tab.h"
 	#include "GrammarTree.h"
-	#include "syntaxAnalyse.h"
 	int yycolumn = 1;
-	#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng-1;yycolumn += yyleng;
+//	#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng-1;yycolumn += yyleng;
 void plantINT(int radix);
 void plantFLOAT();
 void plantID();
@@ -92,6 +91,7 @@ void plantINT(int radix){
 
 	yylval = (char *)tmp;
 	addTree(tmp);
+//	printf("%s\n", tmp->token);
 }
 void plantFLOAT(){
 	Value vl;
@@ -103,6 +103,7 @@ void plantFLOAT(){
 	Leaf *tmp = makeLeaf(yylineno, 0, 1, "FLOAT", vl);
 	yylval = (char *)tmp;
 	addTree(tmp);
+//	printf("%s\n", tmp->token);
 }
 void plantID(){
 	Value vl;
@@ -115,6 +116,7 @@ void plantID(){
 	Leaf *tmp = makeLeaf(yylineno, 3, 1, "ID", vl);
 	yylval = (char *)tmp;
 	addTree(tmp);
+//	printf("%s\n", tmp->token);
 }
 void plantKEY(char *name) {
 	Value vl;
@@ -131,6 +133,7 @@ void plantKEY(char *name) {
 	}
 	yylval = (char *)tmp;
 	addTree(tmp);
+//	printf("%s\n", tmp->token);
 }
 void plantSYMBOL(char *syb){
 	Value vl;
@@ -142,6 +145,7 @@ void plantSYMBOL(char *syb){
 	Leaf *tmp = makeLeaf(yylineno, -1, 1, syb, vl);
 	yylval = (char *)tmp;
 	addTree(tmp);
+//	printf("%s\n", tmp->token);
 }
 void plantRELOP(){
 	Value vl;
@@ -154,6 +158,7 @@ void plantRELOP(){
 	Leaf *tmp = makeLeaf(yylineno, 3, 1, "RELOP", vl);
 	yylval = (char *)tmp;
 	addTree(tmp);
+//	printf("%s\n", tmp->token);
 }
 int hex2int(char *hex, int leng){
 	if (leng < 3) return -1;

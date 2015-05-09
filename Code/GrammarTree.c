@@ -1,6 +1,11 @@
 #include "GrammarTree.h"
 #include <stdlib.h>
 #include <stdio.h>
+Item *table = NULL;
+Item *tail = NULL;
+Item *scope = NULL;
+int count = 0;
+
 Tree *forest = NULL;
 int getError = 0;
 
@@ -130,4 +135,159 @@ void destroyForest(){
 		destroy(&(tmp->tree));
 		free(tmp);
 	}
+}
+
+int cmp(char *a, char *b){
+	int maxLen = max(strlen(a), strlen(b));
+	return memcmp(a, b, maxLen);
+}
+void *cpy(char *a, char *b){
+	int maxLen = max(strlen(a), strlen(b));
+	return memcpy(a, b, maxLen);
+}
+Item *getScope(){return scope;}
+void setScope(Item *new_scope){scope = new_scope;}
+Item *newItem(){
+	Item *result = (Item *)malloc(sizeof(Item));
+
+	result->scope = NULL;
+	result->number = count++;
+	result->args_num = -1;
+
+	result->type = -1;
+	memset(result->type_name, 0, ID_MAX_LEN);
+	result->ret_type = -1;
+	memset(result->ret_type_name, 0, ID_MAX_LEN);
+	memset(result->name, 0, ID_MAX_LEN);
+	result->line = -1;
+
+	result->result_type = -1;
+	memset(result->result_type_name, 0, ID_MAX_LEN);
+
+	result->dimension = -1;
+	result->dim_max = NULL;
+	result->next = NULL;
+
+	return result;
+}
+void insertTable(Item *x){
+	if (x != NULL){
+		if (x->type == TYPE_STRUCT && isContain(x->type_name)) {
+			printf("Error type 3 at Line %d: struct %s name has been used\n", x->line, x->type_name);
+			return;
+		}
+		else if (x->type == TYPE_FUNCTION && isContain(x->name)){
+			printf("Error type 4 at Line %d: function %s name has been used\n", x->line, x->name);
+			return;
+		}
+		else if (x->type != TYPE_STRUCT && isContain(x->name)){
+			printf("Error type 3 at Line %d: var %s name has been used\n", x->line, x->name);
+			return;
+		}
+		x->next = NULL;
+		if (table == NULL) {
+			table = x;
+			tail = x;
+		}
+		else {
+			tail->next = x;
+			tail = x;
+		}
+	}
+//	displayTable(table);
+}
+void displayTable(Item *table){
+	printf("--------Current Table---------\n");
+	int number = -1;
+	Item *trace = table;
+	while (trace != NULL && trace->number > number){
+		printf("%lx:%d Item:\tnum=%d scope=%lx type=%d type_name=%s \n\tret_type=%d ret_type_name=%s name=%s line=%d\n", trace, trace->line, trace->number, trace->scope, trace->type, trace->type_name, trace->ret_type, trace->ret_type_name, trace->name, trace->line);
+		printf("\n");
+		number = trace->number;
+		trace = trace->next;
+	}
+	printf("------------------------------\n");
+}
+
+bool isContain(char *var){
+	if (var == NULL) return false;
+	Item *trace = table;
+	while (trace != NULL){
+		if (cmp(trace->name, var) == 0) return true;
+		trace = trace->next;
+	}
+	return false;
+}
+
+Item *getItem(char *name){
+	if (name == NULL) return NULL;
+	Item *trace = table;
+	while (trace != NULL){
+		if (cmp(trace->name, name) == 0) return trace;
+		trace = trace->next;
+	}
+	return NULL;
+}
+int getType(char *item){
+	if (item == NULL) return -1;
+	else {
+		Item *it = (Item *)item;
+		if (it->type == TYPE_FUNCTION) return it->ret_type;
+		else return it->type;
+	}
+}
+void setArgsNumber(char *item){
+	if (item == NULL) return;
+	else {
+		Item *trace = table;
+		((Item *)item)->args_num = 0;
+		while (trace != NULL){
+			if (trace->scope == (Item *)item) ((Item *)item)->args_num++;
+			trace = trace->next;
+		}
+	}
+}
+Item *getArgs(char *name){
+	Item *result = NULL;
+	Item *result_tail = NULL;
+	Item *fun = getItem(name);
+	if (fun != NULL && fun->type == TYPE_FUNCTION){
+		int total = fun->args_num;
+		Item *trace = table;
+		while (total > 0){
+			while (trace != NULL && trace->scope != fun) trace = trace->next;
+			if (trace == NULL && total > 0) {
+				printf("Get args list error\n");
+				return NULL;
+			}
+			else {
+				if (result == NULL){
+					result = newItem();
+					memcpy(result, trace, sizeof(Item));
+					tail = result;
+					tail->next = NULL;
+				}
+				else {
+					Item *temp = newItem();
+					memcpy(temp, trace, sizeof(Item));
+					tail->next = temp;
+					tail = temp;
+					tail->next = NULL;
+				}
+			}
+			total--;
+		}
+	}
+	return result;
+}
+bool cmpArgs(Item *def, Item *in){
+	while (def != NULL && in != NULL){
+		if (def->type == in->type){
+			def = def->next;
+			in = in->next;
+		}
+		else return false;
+	}
+	if (def != NULL || in != NULL) return false;
+	return true;
 }

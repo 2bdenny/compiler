@@ -9,13 +9,24 @@ struct A{
 	} u;
 	struct B w;
 };
-
+int hello(){
+	return 1;
+}
 int to, from;
 int main()
 {
-	int k[3][4][5];
-	int i = t+1;
-	int j = 2*m;
 	struct A d;
+	struct Z e;
+	int k[3][4][5];
+	float j = 2*m;
+	int i=j;
+	hello(1);
+	k = j;
+	j && j;
+	j || j;
+	1 = i;
+	i();
+	hello();
 	return 0;
 }
+
