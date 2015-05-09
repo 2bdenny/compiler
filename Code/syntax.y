@@ -48,6 +48,7 @@ ExtDefList	: ExtDef ExtDefList		{}
 		;
 
 ExtDef		: Specifier ExtDecList{
+			  // 全局变量的定义
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
 			  while (trace != NULL){
@@ -62,6 +63,7 @@ ExtDef		: Specifier ExtDecList{
 		  }SEMI{}
 		| Specifier SEMI{}
 		| Specifier FunDec {
+			// 函数的定义
 			$$ = $2;
 			//printf("FunDec line:%d\n", ((Item *)$2)->line);
 			((Item *)$$)->ret_type = ((Item *)$1)->type;
@@ -103,6 +105,7 @@ Specifier	: TYPE {  // 符号表建立相关
 		;
 
 StructSpecifier	: STRUCT OptTag LC{
+			  // 结构体的定义
 			  $3 = $2;
 			  if (((Item *)$3)->line == -1) ((Item *)$3)->line = ((Leaf *)$2)->line;
 			  ((Item *)$3)->type = TYPE_STRUCT;
@@ -110,6 +113,7 @@ StructSpecifier	: STRUCT OptTag LC{
 			  insertTable((Item *)$3);
 			  setScope((Item *)$3);
 		  } DefList RC {
+			  // 这里往后如果不是semi则开始结构体变量的定义
 			  $$ = (char *)newItem();
 			  memcpy($$, $2, sizeof(Item));
 			  if (((Item *)$$)->line == -1) ((Item *)$$)->line = ((Leaf *)$2)->line;
@@ -119,6 +123,7 @@ StructSpecifier	: STRUCT OptTag LC{
 			  ((Item *)$$)->scope = getScope();
 		  }
 		| STRUCT Tag {
+			// 结构体变量的定义
 			$$ = (char *)newItem();
 			((Item *)$$)->type = TYPE_VAR_STRUCT;
 			cpy(((Item *)$$)->type_name,((Item *)$2)->type_name);
@@ -133,6 +138,7 @@ StructSpecifier	: STRUCT OptTag LC{
 		;
 
 OptTag		: ID{
+			  // 结构体名
 			  $$ = (char *)newItem();
 			  if ($1 != NULL){
 				  cpy(((Item *)$$)->type_name, ((Leaf *)$1)->val.val_name);
@@ -145,6 +151,7 @@ OptTag		: ID{
 		;
 
 Tag		: ID{
+			  // 结构体名
 			  $$ = (char *)newItem();
 			  if ($1 != NULL){
 				  cpy(((Item *)$$)->type_name, ((Leaf *)$1)->val.val_name);
@@ -154,6 +161,7 @@ Tag		: ID{
 		;
 
 VarDec		: ID {
+			  // 变量
 			  $$ = (char *)newItem();
 			  ((Item *)$$)->scope = getScope();
 			  cpy(((Item *)$$)->name, ((Leaf *)$1)->val.val_name);
@@ -161,6 +169,7 @@ VarDec		: ID {
 			  ((Item *)$$)->dimension = 0;
 		  }
 		| VarDec LB INT {
+			// 变量数组
 			$$ = $1;
 			((Item *)$$)->dimension ++;
 			int *tmp = ((Item *)$$)->dim_max;
@@ -175,6 +184,7 @@ VarDec		: ID {
 		;
 
 FunDec		: ID LP {
+			  // 带参函数
 			  $2 = (char *)newItem();
 			  ((Item *)$2)->scope = NULL;
 			  ((Item *)$2)->type = TYPE_FUNCTION;
@@ -191,6 +201,7 @@ FunDec		: ID LP {
 			  setScope(NULL);
 		  }
 		| ID LP RP{
+			// 无参函数
 			$$ = (char *)newItem();
 			((Item *)$2)->args_num = 0;
 			((Item *)$$)->scope = NULL;
@@ -203,6 +214,7 @@ FunDec		: ID LP {
 		;
 
 VarList		: ParamDec COMMA VarList {
+			  // 参数列表定义
 			  ((Item *)$1)->next = (Item *)$3;
 			  $$ = $1;
 		  }
@@ -225,6 +237,7 @@ ParamDec	: Specifier VarDec {
 		;
 
 CompSt		: LC DefList StmtList RC{
+			  // 语句块定义
 			  if (getScope() != NULL)
 			  	setScope((Item *)getScope()->scope);
 			  if ($3 == NULL) $$ = (char *)newItem();

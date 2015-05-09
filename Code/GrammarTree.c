@@ -254,13 +254,50 @@ Item *getArgs(char *name){
 	if (fun != NULL && fun->type == TYPE_FUNCTION){
 		int total = fun->args_num;
 		Item *trace = table;
-		while (total > 0){
-			while (trace != NULL && trace->scope != fun) trace = trace->next;
-			if (trace == NULL && total > 0) {
-				printf("Get args list error\n");
-				return NULL;
+		while (trace != NULL && total > 0){
+			if (trace->scope == fun){
+				if (result == NULL){
+					result = newItem();
+					memcpy(result, trace, sizeof(Item));
+					tail = result;
+					tail->next = NULL;
+				}
+				else {
+					Item *temp = newItem();
+					memcpy(temp, trace, sizeof(Item));
+					tail->next = temp;
+					tail = temp;
+					tail->next = NULL;
+				}
+				total--;
 			}
-			else {
+			trace = trace->next;
+		}
+		if (total > 0) printf("Error occur in get args\n");
+	}
+	return result;
+}
+bool cmpArgs(Item *def, Item *in){
+	while (def != NULL && in != NULL){
+		if (def->type == in->type){
+			if (!(def->type == TYPE_VAR_STRUCT && (cmp(def->type_name, in->type_name) == 0))) return false;
+			def = def->next;
+			in = in->next;
+		}
+		else return false;
+	}
+	if (def != NULL || in != NULL) return false;
+	return true;
+}
+Item *getStructMember(char *item){
+	Item *result = NULL;
+	Item *tail = NULL;
+	Item *it = (Item *)item;
+	if (it == NULL || it->type != TYPE_STRUCT) return NULL;
+	else {
+		Item *trace = table;
+		while (trace != NULL) {
+			if (trace->scope == it){
 				if (result == NULL){
 					result = newItem();
 					memcpy(result, trace, sizeof(Item));
@@ -275,19 +312,8 @@ Item *getArgs(char *name){
 					tail->next = NULL;
 				}
 			}
-			total--;
+			trace = trace->next;
 		}
 	}
 	return result;
-}
-bool cmpArgs(Item *def, Item *in){
-	while (def != NULL && in != NULL){
-		if (def->type == in->type){
-			def = def->next;
-			in = in->next;
-		}
-		else return false;
-	}
-	if (def != NULL || in != NULL) return false;
-	return true;
 }
