@@ -180,7 +180,7 @@ void insertTable(Item *x){
 			printf("Error type 4 at Line %d: function %s name has been used\n", x->line, x->name);
 			return;
 		}
-		else if (x->type != TYPE_STRUCT && isContain(x->name)){
+		else if (x->type != TYPE_STRUCT  && x->type != TYPE_IF && x->type != TYPE_WHILE && x->type != TYPE_ELSE && isContain(x->name)){
 			printf("Error type 3 at Line %d: var %s name has been used\n", x->line, x->name);
 			return;
 		}
@@ -201,7 +201,7 @@ void displayTable(Item *table){
 	int number = -1;
 	Item *trace = table;
 	while (trace != NULL && trace->number > number){
-		printf("%lx:%d Item:\tnum=%d scope=%lx type=%d type_name=%s \n\tret_type=%d ret_type_name=%s name=%s line=%d\n", trace, trace->line, trace->number, trace->scope, trace->type, trace->type_name, trace->ret_type, trace->ret_type_name, trace->name, trace->line);
+		printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s \n\tret_type=%d ret_type_name=%s name=%s line=%d\n", (unsigned long)trace, trace->line, trace->args_num, (unsigned long)trace->scope, trace->type, trace->type_name, trace->ret_type, trace->ret_type_name, trace->name, trace->line);
 		printf("\n");
 		number = trace->number;
 		trace = trace->next;
@@ -213,7 +213,8 @@ bool isContain(char *var){
 	if (var == NULL) return false;
 	Item *trace = table;
 	while (trace != NULL){
-		if (cmp(trace->name, var) == 0) return true;
+		if (trace->type == TYPE_STRUCT && cmp(trace->type_name, var) == 0) return true;
+		if (trace->type != TYPE_STRUCT && cmp(trace->name, var) == 0) return true;
 		trace = trace->next;
 	}
 	return false;
@@ -247,7 +248,27 @@ void setArgsNumber(char *item){
 		}
 	}
 }
+
+bool cmpItem(Item *it1, Item *it2){
+	if ((it1 == NULL && it2 != NULL) || (it1 != NULL && it2 == NULL)) return false;
+	else if (it1 == NULL && it2 == NULL) return true;
+	else if (it1->type == it2->type){
+		if (it1->type == TYPE_VAR_STRUCT){
+			if (cmp(it1->type_name, it2->type_name) == 0) return true;
+			else {
+				Item *list1 = getStructMember((char *)getItem(it1->type_name));
+				Item *list2 = getStructMember((char *)getItem(it2->type_name));
+				return cmpArgs(list1, list2);
+			};
+		}
+		else return true;
+	}
+	else if ((it1->type == TYPE_VAR_INT && it2->type == TYPE_INT)||(it1->type == TYPE_VAR_FLOAT && it2->type == TYPE_FLOAT)) return true;
+	else return false;
+}
+
 Item *getArgs(char *name){
+//	displayTable(table);
 	Item *result = NULL;
 	Item *result_tail = NULL;
 	Item *fun = getItem(name);
@@ -275,16 +296,14 @@ Item *getArgs(char *name){
 		}
 		if (total > 0) printf("Error occur in get args\n");
 	}
+//	displayTable(table);
 	return result;
 }
 bool cmpArgs(Item *def, Item *in){
 	while (def != NULL && in != NULL){
-		if (def->type == in->type){
-			if (!(def->type == TYPE_VAR_STRUCT && (cmp(def->type_name, in->type_name) == 0))) return false;
-			def = def->next;
-			in = in->next;
-		}
-		else return false;
+		if (!cmpItem(def, in)) return false;
+		def = def->next;
+		in = in->next;
 	}
 	if (def != NULL || in != NULL) return false;
 	return true;

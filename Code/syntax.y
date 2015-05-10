@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "lex.yy.c"
 #include "GrammarTree.h"
-#define print_pos() printf("[%s %s %d]\n", __FILE__, __FUNCTION__, __LINE__)
+#define print_pos() printf("[%s %s %d]\n", __FILE__, __FUNCTION__, __LINE__)	//这个宏定义学自余子洵
 %}
 
 /* declared types */
@@ -53,32 +53,26 @@ ExtDef		: Specifier ExtDecList{
 			  Item *item = trace;
 			  while (trace != NULL){
 				  item->type = ((Item *)$1)->type;
-//				  printf("typename=%s\n", ((Item *)$1)->type_name);
 				  cpy(item->type_name, ((Item *)$1)->type_name);
-				  //print_pos();
 				  trace = trace->next;
 				  insertTable(item);
 				  item = trace;
 			  }
 		  }SEMI{}
-		| Specifier SEMI{}
+		| Specifier SEMI {}
 		| Specifier FunDec {
 			// 函数的定义
 			$$ = $2;
-			//printf("FunDec line:%d\n", ((Item *)$2)->line);
 			((Item *)$$)->ret_type = ((Item *)$1)->type;
 			cpy(((Item *)$$)->ret_type_name, ((Item *)$1)->type_name);
-			insertTable((Item *)$$);
+//			insertTable((Item *)$$);
 			setScope((Item *)$$);
-		  } CompSt{
+		  } CompSt {
 			setScope(NULL);
 			int t1 = getType($1);
-			//printf("$3 type=%d, result_type=%d\n", ((Item *)$3)->type, ((Item *)$3)->result_type);
-			int t2 = ((Item *)$3)->result_type;
-			//printf("expect type:%d, return type:%d\n", t1, t2);
-			if (!((t1 == TYPE_VAR_INT && (t2 == TYPE_VAR_INT || t2 == TYPE_INT)) || (t1 == TYPE_VAR_FLOAT && (t2 == TYPE_VAR_FLOAT || t2 == TYPE_FLOAT)) || (t1 == t2)))
+			int t2 = ((Item *)$4)->result_type;
+			if (!((t1 == TYPE_VAR_INT && t2 == TYPE_INT)||(t1 == TYPE_VAR_FLOAT && t2 == TYPE_FLOAT)||(t1 == t2)||(t1 == TYPE_STRUCT && t2 == TYPE_VAR_STRUCT)||(t2 == -1)))
 				printf("Error type 8 at Line %d: return type not match\n", ((Item *)$2)->line);
-
 		  }
 		| error SEMI %prec EDF_ERR	{}
 		;
@@ -192,6 +186,7 @@ FunDec		: ID LP {
 			  ((Item *)$2)->line = ((Leaf *)$1)->line;
 			  if ($1 != NULL) cpy(((Item *)$2)->name, ((Leaf *)$1)->val.val_name);
 			  else printf("$1 is null\n");
+			  insertTable((Item *)$2);
 			  setScope((Item *)$2);
 		  } VarList RP{
 			  $$ = $2;
@@ -203,12 +198,13 @@ FunDec		: ID LP {
 		| ID LP RP{
 			// 无参函数
 			$$ = (char *)newItem();
-			((Item *)$2)->args_num = 0;
+			((Item *)$$)->args_num = 0;
 			((Item *)$$)->scope = NULL;
 			((Item *)$$)->type = TYPE_FUNCTION;
 			((Item *)$$)->line = ((Leaf *)$1)->line;
 			if ($1 != NULL) cpy(((Item *)$$)->name, ((Leaf *)$1)->val.val_name);
 			else printf("$1 is null\n");
+			insertTable((Item *)$$);
 		  }
 		| error RP %prec FUN_ERR	{}
 		;
@@ -244,7 +240,7 @@ CompSt		: LC DefList StmtList RC{
 			  else {
 				  $$ = (char *)newItem();
 				  memcpy($$, $3, sizeof(Item));
-				  //printf("compst -> $$ result type = %d\n", ((Item *)$$)->result_type);
+//				  printf("compst -> $$ result type = %d\n", ((Item *)$$)->result_type);
 			  }
 		  }
 		| error RC %prec COM_ERR	{}
@@ -253,21 +249,72 @@ CompSt		: LC DefList StmtList RC{
 StmtList	: Stmt StmtList {
 			  if ($2 == NULL) $$ = $1;
 			  else $$ = $2;
-			  //printf("$$ result type = %d\n", ((Item *)$$)->result_type);
+//			  printf("$$ result type = %d\n", ((Item *)$$)->result_type);
 		  }
 		| /* empty */ { $$ = NULL; }
 		;
 
-Stmt		: Exp SEMI			{}
+Stmt		: Exp SEMI {
+			  $$ = $1;
+		  }
 		| CompSt {$$ = $1;}
 		| RETURN Exp SEMI {
-			$$ = (char *)newItem();
-			((Item *)$$)->result_type = ((Item *)$2)->type;
-			cpy(((Item *)$$)->result_type_name, ((Item *)$2)->type_name);
+			$$ = $2;
+			Item *t0 = (Item *)$$;
+			Item *t2 = (Item *)$2;
+			t0->result_type = t2->type;
+			cpy(t0->result_type_name, t2->type_name);
+//			if ($$ != NULL) printf("return result_type = %d\n", ((Item *)$$)->result_type);
 		  }
-		| IF LP Exp RP Stmt %prec LOWER_THAN_ELSE {}
-		| IF LP Exp RP Stmt ELSE Stmt
-		| WHILE LP Exp RP Stmt		{}
+		| IF LP Exp RP {
+			Item *cond = (Item *)$3;
+			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
+				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
+
+			Item *tmp = newItem();
+			tmp->line = ((Leaf *)$1)->line;
+			tmp->type = TYPE_IF;
+			insertTable(tmp);
+			setScope(tmp);
+		  }Stmt %prec LOWER_THAN_ELSE {
+			if (getScope() != NULL) setScope(getScope()->scope);
+			else setScope(NULL);
+		  }
+		| IF LP Exp RP {
+			Item *cond = (Item *)$3;
+			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
+				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
+			Item *tmp = newItem();
+			tmp->line = ((Leaf *)$1)->line;
+			tmp->type = TYPE_IF;
+			insertTable(tmp);
+			setScope(tmp);
+		  }Stmt {
+			if (getScope() != NULL) setScope(getScope()->scope);
+			else setScope(NULL);
+		  }ELSE {
+			Item *tmp = newItem();
+			tmp->line = ((Leaf *)$6)->line;
+			tmp->type = TYPE_ELSE;
+			insertTable(tmp);
+			setScope(tmp);
+		  }Stmt{
+			if (getScope() != NULL) setScope(getScope()->scope);
+			else setScope(NULL);
+		  }
+		| WHILE LP Exp RP{
+			Item *cond = (Item *)$3;
+			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
+				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
+			Item *tmp = newItem();
+			tmp->line = ((Leaf *)$1)->line;
+			tmp->type = TYPE_WHILE;
+			insertTable(tmp);
+			setScope(tmp);
+		  }Stmt{
+			if (getScope() != NULL) setScope(getScope()->scope);
+			else setScope(NULL);
+		  }
 		| error SEMI %prec STM_ERR	{}
 		;
 
@@ -282,6 +329,12 @@ Def		: Specifier DecList SEMI {
 				  if (item->type != -1) {
 					  if (item->type != ((Item *)$2)->type) 
 						  printf("Error type 5 at Line %d: type not match of =\n", ((Item *)$2)->line);
+					  else if (item->type == TYPE_VAR_STRUCT){
+						  Item *list1 = getStructMember((char *)getItem(item->type_name));
+						  Item *list2 = getStructMember((char *)getItem(((Item *)$2)->type_name));
+						  if (!cmpArgs(list1, list2)) 
+							  printf("Error type 5 at Line %d: structure type not match of =\n", ((Item *)$2)->line);
+					  }
 				  }
 				  item->type = ((Item *)$1)->type;
 				  cpy(item->type_name, ((Item *)$1)->type_name);
@@ -314,15 +367,27 @@ Dec		: VarDec{
 			  $$ = $1;
 			  ((Item *)$1)->type = getType($3);
 			  cpy(((Item *)$1)->type_name, ((Item *)$3)->type_name);
+			  ((Item *)$1)->scope = getScope();
 		  }
 		;
 
 Exp		: Exp ASSIGNOP Exp {
-			  if (getType($1) != getType($2)){
-				  printf("Error type 5 at Line %d: type not match of =\n", ((Item *)$1)->line);
-			  }
+			  int t1 = getType($1);
+			  int t2 = getType($3);
+//			  printf("t1 = %d, t2 = %d\n", t1, t2);
 			  if (getType($1) == TYPE_INT || getType($1) == TYPE_FLOAT){
 				  printf("Error type 6 at Line %d: only righter on the left of =\n", ((Item *)$1)->line);
+			  }
+			  else if (getType($1) != getType($3) && t1 != -1){
+				  printf("Error type 5 at Line %d: type not match of =\n", ((Leaf *)$2)->line);
+			  }
+			  else if (getType($1) == getType($3) && getType($1) == TYPE_VAR_STRUCT){
+				 Item *s1 = getItem(((Item *)$1)->type_name);
+				 Item *s2 = getItem(((Item *)$3)->type_name);
+				 Item *list1 = getStructMember((char *)s1);
+				 Item *list2 = getStructMember((char *)s2);
+				 if (cmpArgs(list1, list2) != true)
+					 printf("Error type 5 at Line %d: structure not match of =\n", ((Leaf*)$2)->line);
 			  }
 			  $$ = $1;
 		  }
@@ -332,7 +397,7 @@ Exp		: Exp ASSIGNOP Exp {
 			$$ = $1;
 			int t1 = getType($1);
 			int t2 = getType($3);
-			((Item *)$$)->type = (t1 == TYPE_VAR_INT || t1 == TYPE_INT)? TYPE_INT:((t1 == TYPE_VAR_FLOAT || t1 == TYPE_FLOAT)? TYPE_FLOAT:-1);
+			((Item *)$$)->type = TYPE_INT;
 		  }
 		| Exp OR Exp {
 			if ((getType($1) != TYPE_VAR_INT && getType($1) != TYPE_INT) || (getType($3) != TYPE_VAR_INT && getType($3) != TYPE_INT))
@@ -340,7 +405,7 @@ Exp		: Exp ASSIGNOP Exp {
 			$$ = $1;
 			int t1 = getType($1);
 			int t2 = getType($3);
-			((Item *)$$)->type = (t1 == TYPE_VAR_INT || t1 == TYPE_INT)? TYPE_INT:((t1 == TYPE_VAR_FLOAT || t1 == TYPE_FLOAT)? TYPE_FLOAT:-1);
+			((Item *)$$)->type = TYPE_INT;
 		  }
 		| Exp RELOP Exp {
 			int t1 = getType($1);
@@ -354,7 +419,9 @@ Exp		: Exp ASSIGNOP Exp {
 		| Exp PLUS Exp {
 			int t1 = getType($1);
 			int t2 = getType($3);
-			if (!(t1 == t2 && (t1 == TYPE_INT || t1 == TYPE_VAR_INT || t1 == TYPE_FLOAT || t1 == TYPE_VAR_FLOAT))){
+//			printf("t1_type=%d, t2_type=%d\n", t1, t2);
+			if (!(((t1 == TYPE_INT || t1 == TYPE_VAR_INT) && (t2 == TYPE_INT || t2 == TYPE_VAR_INT)) || 
+					((t1 == TYPE_FLOAT || t1 == TYPE_VAR_FLOAT)&&(t2 == TYPE_FLOAT || t2 == TYPE_VAR_FLOAT)))){
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 			}
 			$$ = $1;
@@ -402,12 +469,21 @@ Exp		: Exp ASSIGNOP Exp {
 	 	  }
 		  Args RP {
 			  Item *def_args = getArgs(((Leaf *)$1)->val.val_name);
-			  Item *in_args = (Item *)$3;
+			  Item *in_args = (Item *)$4;
+
 			  if (!cmpArgs(def_args, in_args)){
 				  printf("Error type 9 at Line %d: args not match of function %s\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
 			  }
+//			  printf("%s\n", ((Item *)$4)->name);
 		  }
-		| Exp LB Exp RB			{}
+		| Exp LB Exp RB	{
+			Item *var = (Item *)$1;
+			Item *var3 = (Item *)$3;
+			if (var->type == TYPE_VAR_INT || var->type == TYPE_VAR_FLOAT || var->type == TYPE_VAR_STRUCT)
+				if (var->dimension <= 0) printf("Error type 10 at Line %d: %s not array var\n", ((Leaf *)$2)->line, var->name);
+				else if (var3->type != TYPE_INT && var3->type != TYPE_VAR_INT)
+					printf("Error type 12 at Line %d: error type between [ ]\n", ((Leaf *)$2)->line);
+		  }
 		| Exp DOT ID {
 			Item *exp = (Item *)$1;
 			if (exp->type != TYPE_STRUCT || exp->type != TYPE_VAR_STRUCT) {
@@ -424,34 +500,41 @@ Exp		: Exp ASSIGNOP Exp {
 			if (!isContain(((Leaf *)$1)->val.val_name)) 
 				printf("Error type 1 at Line %d: var %s undefined\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
 			$$ = (char *)getItem(((Leaf *)$1)->val.val_name);
+			if ($$ == NULL) $$ = (char *)newItem();
+
+			((Item *)$$)->result_type = ((Item *)$$)->type;
+			cpy(((Item *)$$)->result_type_name, ((Item *)$$)->type_name);
+//			printf("exp type=%d\n", ((Item *)$$)->result_type);
 		  }
 		| INT {
 			Item *tmp = newItem();
 			tmp->line = ((Leaf *)$1)->line;
 			tmp->type = TYPE_INT;
 			$$ = (char *)tmp;
+//			printf("exp type=%d\n", ((Item *)$$)->type);
 		  }
 		| FLOAT {
 			Item *tmp = newItem();
 			tmp->line = ((Leaf *)$1)->line;
-			tmp->type = TYPE_INT;
+			tmp->type = TYPE_FLOAT;
 			$$ = (char *)tmp;
+//			printf("exp type=%d\n", ((Item *)$$)->type);
 		  }
 		| error RP %prec RP_ERR		{}
 		| Exp error			{}
 		;
 
 Args		: Exp COMMA Args {
-			Item *tmp = getItem(((Item *)$1)->name);
 			$$ = (char *)newItem();
-			memcpy($$, tmp, sizeof(Item));
+			memcpy($$, $1, sizeof(Item));
 			((Item *)$$)->next = (Item *)$3;
+//			displayTable((Item *)$$);
 		  }
 		| Exp {
-			Item *tmp = getItem(((Item *)$1)->name);
 			$$ = (char *)newItem();
-			memcpy($$, tmp, sizeof(Item));
+			memcpy($$, $1, sizeof(Item));
 			((Item *)$$)->next = NULL;
+//			displayTable((Item *)$$);
 		  }
 		| /**/ {$$ = NULL;}
 		;

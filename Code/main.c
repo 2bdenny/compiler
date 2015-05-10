@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "GrammarTree.h"
 #include "syntax.tab.h"
+//#include "lex.yy.c"
 
 //#define YYDEBUG 1
 //extern FILE *yyin;
@@ -15,14 +16,14 @@ int main(int argc, char *argv[]){
 			return 1;
 		}
 		yyrestart(f);
-		printf("yyrestart ok\n");
+//		printf("yyrestart ok\n");
 //		yydebug = 1;
 		yyparse();
 		fclose(f);
 //		display(forest->tree, 0);
 //		analyse(forest->tree);
-		printf("\n\n\n\n\n\n");
-		displayTable(table);
+//		printf("\n\n\n\n\n\n");
+//		displayTable(table);
 
 //		analyse(forest->tree);
 		destroyForest();
