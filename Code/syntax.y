@@ -378,6 +378,7 @@ Exp		: Exp ASSIGNOP Exp {
 			  if (getType($1) == TYPE_INT || getType($1) == TYPE_FLOAT){
 				  printf("Error type 6 at Line %d: only righter on the left of =\n", ((Item *)$1)->line);
 			  }
+			  else if ((t1 == TYPE_VAR_INT && t2 == TYPE_INT)||(t1 == TYPE_VAR_FLOAT && t2 == TYPE_FLOAT));
 			  else if (getType($1) != getType($3) && t1 != -1){
 				  printf("Error type 5 at Line %d: type not match of =\n", ((Leaf *)$2)->line);
 			  }
@@ -390,6 +391,7 @@ Exp		: Exp ASSIGNOP Exp {
 					 printf("Error type 5 at Line %d: structure not match of =\n", ((Leaf*)$2)->line);
 			  }
 			  $$ = $1;
+//			  printf("$1 = %d, $2 = %d, $3 = %d\n", ((Item *)$1)->type, ((Item *)$2)->type, ((Item *)$3)->type);
 		  }
 		| Exp AND Exp {
 			if ((getType($1) != TYPE_VAR_INT && getType($1) != TYPE_INT) || (getType($3) != TYPE_VAR_INT && getType($3) != TYPE_INT))

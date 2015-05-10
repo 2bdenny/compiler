@@ -11,10 +11,12 @@ struct C{
 	int m;
 } d;
 int c;
+int n;
 int main(){
 	hello(1, 2);
 	a = b;
 	a = c;
 	a = d;
+	c = n = 0;
 	return 1;
 }
