@@ -141,6 +141,7 @@ OptTag		: ID{
 		  }
 		| /* empty */{
 			$$ = (char *)newItem();
+			cpy(((Item *)$$)->type_name, getAnonymousStruct());
 		  }
 		;
 
@@ -220,6 +221,8 @@ VarList		: ParamDec COMMA VarList {
 		;
 
 ParamDec	: Specifier VarDec {
+			//  printf("vardec\n");
+			//  displayTable((Item *)$2);
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
 			  while (trace != NULL){
@@ -323,12 +326,21 @@ DefList		: Def DefList			{}
 		;
 
 Def		: Specifier DecList SEMI {
+			  Item *t1 = (Item *)$1;
+
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
+			  //printf("Def->Specifier DecList SEMI\n");
+			  //displayTable((Item *)$2);
 			  while (trace != NULL){
 				  if (item->type != -1) {
-					  if (item->type != ((Item *)$2)->type) 
-						  printf("Error type 5 at Line %d: type not match of =\n", ((Item *)$2)->line);
+					  if (item->type != t1->type){
+						  if (TYPE_VAR_INT == t1->type && TYPE_INT == item->type){
+						  }
+						  else if (TYPE_VAR_FLOAT == t1->type && TYPE_FLOAT == item->type){
+						  }
+						  else printf("Error type 5 at Line %d: type not match of =\n", ((Item *)$2)->line);
+					  }
 					  else if (item->type == TYPE_VAR_STRUCT){
 						  Item *list1 = getStructMember((char *)getItem(item->type_name));
 						  Item *list2 = getStructMember((char *)getItem(((Item *)$2)->type_name));
@@ -336,9 +348,10 @@ Def		: Specifier DecList SEMI {
 							  printf("Error type 5 at Line %d: structure type not match of =\n", ((Item *)$2)->line);
 					  }
 				  }
-				  item->type = ((Item *)$1)->type;
-				  cpy(item->type_name, ((Item *)$1)->type_name);
+				  item->type = t1->type;
+				  cpy(item->type_name, t1->type_name);
 				  trace = trace->next;
+//				  printf("Def insert %s\n", item->name);
 				  insertTable(item);
 				  item = trace;
 			  }
@@ -358,155 +371,278 @@ DecList		: Dec {
 Dec		: VarDec{
 			  $$ = $1;
 		  }
-		| VarDec {
-			$$ = $1;
-		  }ASSIGNOP Exp {
+		| VarDec ASSIGNOP Exp {
 			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT)){
 				  printf("Error type 15 at Line %d: can not = in struct\n", ((Item *)$1)->line);
 			  }
-			  $$ = $1;
-			  ((Item *)$1)->type = getType($3);
-			  cpy(((Item *)$1)->type_name, ((Item *)$3)->type_name);
-			  ((Item *)$1)->scope = getScope();
+			  Item *e1 = (Item *)$1;
+			  Item *e2 = (Item *)$3;
+//			  printf("=: %s type= %d\n", e1->name, e2->type);
+			  if (TYPE_FUNCTION == e2->type) {
+				  e1->type = e2->ret_type;
+				  cpy(e1->type_name, e2->ret_type_name);
+			  }
+			  else {
+			  	e1->type = e2->type;
+				cpy(e1->type_name, e2->type_name);
+			  }
+			  e1->scope = getScope();
+			  $$ = (char *)e1;
 		  }
 		;
 
 Exp		: Exp ASSIGNOP Exp {
-			  int t1 = getType($1);
-			  int t2 = getType($3);
-//			  printf("t1 = %d, t2 = %d\n", t1, t2);
-			  if (getType($1) == TYPE_INT || getType($1) == TYPE_FLOAT){
-				  printf("Error type 6 at Line %d: only righter on the left of =\n", ((Item *)$1)->line);
+			  Item *e1 = (Item *)$1;
+			  Item *e2 = (Item *)$3;
+			  int t1 = e1->type;
+			  int t2 = e2->type;
+			  if (t1 == TYPE_VAR_INT || t1 == TYPE_VAR_FLOAT || t1 == TYPE_VAR_STRUCT){
+				  if (TYPE_VAR_INT == t1 && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
+				  }
+				  else if (TYPE_VAR_FLOAT == t1 && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
+				  }
+				  else if (TYPE_VAR_STRUCT == t1 && TYPE_VAR_STRUCT != t2){
+				  }
+				  else if (TYPE_VAR_STRUCT == t1 && TYPE_VAR_STRUCT == t2){
+					  Item *s1 = getItem(((Item *)$1)->type_name);
+					  Item *s2 = getItem(((Item *)$3)->type_name);
+					  Item *list1 = getStructMember((char *)s1);
+					  Item *list2 = getStructMember((char *)s2);
+					  if (cmpArgs(list1, list2) != true)
+						  printf("Error type 5 at Line %d: structure not match of =\n", ((Leaf*)$2)->line);
+				  }
+				  else printf("Error type 5 at Line %d: type not match of =\n", ((Leaf *)$2)->line);
+				  $$ = $1;
 			  }
-			  else if ((t1 == TYPE_VAR_INT && t2 == TYPE_INT)||(t1 == TYPE_VAR_FLOAT && t2 == TYPE_FLOAT));
-			  else if (getType($1) != getType($3) && t1 != -1){
-				  printf("Error type 5 at Line %d: type not match of =\n", ((Leaf *)$2)->line);
+			  else {
+				  printf("Error type 6 at Line %d: only righter on the left of =\n", e1->line);
+				  e1->type = TYPE_VAR_INT;
+				  $$ = (char *)e1;
 			  }
-			  else if (getType($1) == getType($3) && getType($1) == TYPE_VAR_STRUCT){
-				 Item *s1 = getItem(((Item *)$1)->type_name);
-				 Item *s2 = getItem(((Item *)$3)->type_name);
-				 Item *list1 = getStructMember((char *)s1);
-				 Item *list2 = getStructMember((char *)s2);
-				 if (cmpArgs(list1, list2) != true)
-					 printf("Error type 5 at Line %d: structure not match of =\n", ((Leaf*)$2)->line);
-			  }
-			  $$ = $1;
-//			  printf("$1 = %d, $2 = %d, $3 = %d\n", ((Item *)$1)->type, ((Item *)$2)->type, ((Item *)$3)->type);
 		  }
 		| Exp AND Exp {
-			if ((getType($1) != TYPE_VAR_INT && getType($1) != TYPE_INT) || (getType($3) != TYPE_VAR_INT && getType($3) != TYPE_INT))
+			Item *e1 = (Item *)$1;
+			Item *e2 = (Item *)$3;
+			int t1 = e1->type;
+			int t2 = e2->type;
+			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
+				$$ = $1;
+				((Item *)$$)->type = TYPE_INT;
+			}
+			else {
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
-			$$ = $1;
-			int t1 = getType($1);
-			int t2 = getType($3);
-			((Item *)$$)->type = TYPE_INT;
+				e1->type = TYPE_INT;
+				$$ = (char *)e1;
+			}
 		  }
 		| Exp OR Exp {
-			if ((getType($1) != TYPE_VAR_INT && getType($1) != TYPE_INT) || (getType($3) != TYPE_VAR_INT && getType($3) != TYPE_INT))
+			Item *e1 = (Item *)$1;
+			Item *e2 = (Item *)$3;
+			int t1 = e1->type;
+			int t2 = e2->type;
+			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
+				$$ = $1;
+				((Item *)$$)->type = TYPE_INT;
+			}
+			else {
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
-			$$ = $1;
-			int t1 = getType($1);
-			int t2 = getType($3);
-			((Item *)$$)->type = TYPE_INT;
+				e1->type = TYPE_INT;
+				$$ = (char *)e1;
+			}
 		  }
 		| Exp RELOP Exp {
-			int t1 = getType($1);
-			int t2 = getType($3);
-			if (!(t1 == t2 && (t1 == TYPE_INT || t1 == TYPE_VAR_INT || t1 == TYPE_FLOAT || t1 == TYPE_VAR_FLOAT))){
-				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			Item *e1 = (Item *)$1;
+			Item *e2 = (Item *)$3;
+			int t1 = e1->type;
+			int t2 = e2->type;
+			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
+				$$ = $1;
+				((Item *)$$)->type = TYPE_INT;
 			}
-			$$ = $1;
-			((Item *)$$)->type = (t1 == TYPE_VAR_INT || t1 == TYPE_INT)? TYPE_INT:((t1 == TYPE_VAR_FLOAT || t1 == TYPE_FLOAT)? TYPE_FLOAT:-1);
+			else {
+				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+				e1->type = TYPE_INT;
+				$$ = (char *)e1;
+			}
 		  }
 		| Exp PLUS Exp {
-			int t1 = getType($1);
-			int t2 = getType($3);
-//			printf("t1_type=%d, t2_type=%d\n", t1, t2);
-			if (!(((t1 == TYPE_INT || t1 == TYPE_VAR_INT) && (t2 == TYPE_INT || t2 == TYPE_VAR_INT)) || 
-					((t1 == TYPE_FLOAT || t1 == TYPE_VAR_FLOAT)&&(t2 == TYPE_FLOAT || t2 == TYPE_VAR_FLOAT)))){
-				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			Item *e1 = (Item *)$1;
+			Item *e2 = (Item *)$3;
+			int t1 = e1->type;
+			int t2 = e2->type;
+			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
+				e1->type = TYPE_INT;
+				$$ = (char *)e1;
 			}
-			$$ = $1;
-			((Item *)$$)->type = (t1 == TYPE_VAR_INT || t1 == TYPE_INT)? TYPE_INT:((t1 == TYPE_VAR_FLOAT || t1 == TYPE_FLOAT)? TYPE_FLOAT:-1);
+			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
+				e1->type = TYPE_FLOAT;
+				$$ = (char *)e1;
+			}
+			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 		  }
 		| Exp MINUS Exp {
-			int t1 = getType($1);
-			int t2 = getType($3);
-			if (!(t1 == t2 && (t1 == TYPE_INT || t1 == TYPE_VAR_INT || t1 == TYPE_FLOAT || t1 == TYPE_VAR_FLOAT))){
-				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			Item *e1 = (Item *)$1;
+			Item *e2 = (Item *)$3;
+			int t1 = e1->type;
+			int t2 = e2->type;
+			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
+				e1->type = TYPE_INT;
+				$$ = (char *)e1;
 			}
-			$$ = $1;
-			((Item *)$$)->type = (t1 == TYPE_VAR_INT || t1 == TYPE_INT)? TYPE_INT:((t1 == TYPE_VAR_FLOAT || t1 == TYPE_FLOAT)? TYPE_FLOAT:-1);
+			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
+				e1->type = TYPE_FLOAT;
+				$$ = (char *)e1;
+			}
+			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 		  }		
 		| Exp STAR Exp {
-			int t1 = getType($1);
-			int t2 = getType($3);
-			if (!(t1 == t2 && (t1 == TYPE_INT || t1 == TYPE_VAR_INT || t1 == TYPE_FLOAT || t1 == TYPE_VAR_FLOAT))){
-				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			Item *e1 = (Item *)$1;
+			Item *e2 = (Item *)$3;
+			int t1 = e1->type;
+			int t2 = e2->type;
+			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
+				e1->type = TYPE_INT;
+				$$ = (char *)e1;
 			}
-			$$ = $1;
-			((Item *)$$)->type = (t1 == TYPE_VAR_INT || t1 == TYPE_INT)? TYPE_INT:((t1 == TYPE_VAR_FLOAT || t1 == TYPE_FLOAT)? TYPE_FLOAT:-1);
+			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
+				e1->type = TYPE_FLOAT;
+				$$ = (char *)e1;
+			}
+			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 		  }		
 		| Exp DIV Exp {
-			int t1 = getType($1);
-			int t2 = getType($3);
-			if (!(t1 == t2 && (t1 == TYPE_INT || t1 == TYPE_VAR_INT || t1 == TYPE_FLOAT || t1 == TYPE_VAR_FLOAT))){
-				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			Item *e1 = (Item *)$1;
+			Item *e2 = (Item *)$3;
+			int t1 = e1->type;
+			int t2 = e2->type;
+			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
+				e1->type = TYPE_INT;
+				$$ = (char *)e1;
 			}
-			$$ = $1;
-			((Item *)$$)->type = (t1 == TYPE_VAR_INT || t1 == TYPE_INT)? TYPE_INT:((t1 == TYPE_VAR_FLOAT || t1 == TYPE_FLOAT)? TYPE_FLOAT:-1);
+			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
+				e1->type = TYPE_FLOAT;
+				$$ = (char *)e1;
+			}
+			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 		  }		
-		| LP Exp RP %prec LL_THAN_ELSE	{}
-		| MINUS Exp %prec HIGH_MINUS	{}
-		| NOT Exp			{}
+		| LP Exp RP %prec LL_THAN_ELSE	{$$ = $2;}
+		| MINUS Exp %prec HIGH_MINUS {
+			Item *e1 = (Item *)$2; 
+			int t1 = e1->type;
+			if (TYPE_INT == t1 || TYPE_VAR_INT == t1){
+				e1->type = TYPE_INT;
+				$$ = $2;
+			}
+			else if (TYPE_FLOAT == t1 || TYPE_VAR_FLOAT == t1){
+				e1->type = TYPE_FLOAT;
+				$$ = $2;
+			}
+			else {
+				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$1)->line, ((Leaf *)$1)->token);
+				$$ = $2;
+			}
+		  }
+		| NOT Exp{
+			Item *e1 = (Item *)$2;
+			int t1 = e1->type;
+			if (TYPE_INT == t1 || TYPE_VAR_INT == t1){
+				$$ = $2;
+				((Item *)$$)->type = TYPE_INT;
+			}
+			else {
+				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+				$$ = $2;
+				((Item *)$$)->type = TYPE_INT;
+			}
+		  }
 		| ID LP {
-			$$ = (char *)getItem(((Leaf *)$1)->val.val_name);
-			if (!isContain(((Leaf *)$1)->val.val_name)) {
+			Item *fun = getItem(((Leaf *)$1)->val.val_name);
+			if (fun == NULL) {
 				printf("Error type 2 at Line %d: function %s undefined\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
 			}
 			else {
-				if (((Item *)$$)->type != TYPE_FUNCTION)
+				if (fun->type != TYPE_FUNCTION)
 					printf("Error type 11 at Line %d: %s not a function\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
 			}
+			fun = NULL;
 	 	  }
 		  Args RP {
 			  Item *def_args = getArgs(((Leaf *)$1)->val.val_name);
 			  Item *in_args = (Item *)$4;
+			  //printf("args start at %lx\n", $4);
 
 			  if (!cmpArgs(def_args, in_args)){
 				  printf("Error type 9 at Line %d: args not match of function %s\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
 			  }
-//			  printf("%s\n", ((Item *)$4)->name);
+			  Item *fun = getItem(((Leaf *)$1)->val.val_name);
+			  Item *dollar = newItem();
+			  if (fun != NULL){
+				  dollar->type = fun->ret_type;
+				  cpy(dollar->name, fun->ret_type_name);
+			  }
+			  $$ = (char *)dollar;
 		  }
 		| Exp LB Exp RB	{
 			Item *var = (Item *)$1;
 			Item *var3 = (Item *)$3;
-			if (var->type == TYPE_VAR_INT || var->type == TYPE_VAR_FLOAT || var->type == TYPE_VAR_STRUCT)
-				if (var->dimension <= 0) printf("Error type 10 at Line %d: %s not array var\n", ((Leaf *)$2)->line, var->name);
-				else if (var3->type != TYPE_INT && var3->type != TYPE_VAR_INT)
+			Item *def = getItem(var->name);
+			if (var->type == TYPE_VAR_INT || var->type == TYPE_VAR_FLOAT || var->type == TYPE_VAR_STRUCT){
+				if (var3->type == TYPE_INT || var3->type == TYPE_VAR_INT){
+					var->dimension ++;
+					if (var->dimension > def->dimension){
+						printf("Error type 10 at Line %d: %s not array or dimension not match\n", ((Leaf *)$2)->line, var->name);
+					}
+				}
+				else {
 					printf("Error type 12 at Line %d: error type between [ ]\n", ((Leaf *)$2)->line);
+				}
+			}
+			else printf("Error type 10 at Line %d: %s not array\n", ((Leaf *)$2)->line, var->name);
+			$$ = (char *)var;
+//			printf("%d: type=%d, type_name=%s\n", var->line, var->type, var->type_name);
 		  }
 		| Exp DOT ID {
+			Leaf *mem = (Leaf *)$3;
 			Item *exp = (Item *)$1;
-			if (exp->type != TYPE_STRUCT || exp->type != TYPE_VAR_STRUCT) {
+			Item *var = getItem(exp->name);
+			if (var->type != TYPE_VAR_STRUCT) {
 				printf("Error type 13 at Line %d: %s not a struct\n", ((Leaf *)$2)->line, exp->name);
 			}
+			else if (exp->dimension < var->dimension){
+				printf("Error type 10 at Line %d: %s dimension not match\n", ((Leaf *)$2)->line, exp->name);
+			}
 			else {
-				Item *component = getItem(exp->name);
-				if (component == NULL || component->scope != exp) {
+				Item *component = getItem(mem->val.val_name);
+				Item *def = getItem(var->type_name);
+				if (component == NULL || component->scope != def) {
 					printf("Error type 14 at Line %d: %s not %s 's component\n", ((Leaf *)$2)->line, component->name, exp->type_name);
+				}
+				else {
+					Item *dollar = newItem();
+					memcpy(dollar, component, sizeof(Item));
+					dollar->dimension = 0;
+					dollar->dim_max = NULL;
+					$$ = (char *)dollar;
 				}
 			}
 		  }
 		| ID { 
-			if (!isContain(((Leaf *)$1)->val.val_name)) 
+			if (!isContain(((Leaf *)$1)->val.val_name)) {
 				printf("Error type 1 at Line %d: var %s undefined\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
-			$$ = (char *)getItem(((Leaf *)$1)->val.val_name);
-			if ($$ == NULL) $$ = (char *)newItem();
+				$$ = (char *)newItem();
+			}
+			else {
+				// 从符号表里取数
+				Item *var = getItem(((Leaf *)$1)->val.val_name);
+				Item *dd = newItem();
 
-			((Item *)$$)->result_type = ((Item *)$$)->type;
-			cpy(((Item *)$$)->result_type_name, ((Item *)$$)->type_name);
-//			printf("exp type=%d\n", ((Item *)$$)->result_type);
+				if (var != NULL){
+					memcpy(dd, var, sizeof(Item));
+					dd->dimension = 0;
+					dd->dim_max = NULL;
+				}
+				$$ = (char *)dd;
+			}
 		  }
 		| INT {
 			Item *tmp = newItem();
@@ -527,16 +663,20 @@ Exp		: Exp ASSIGNOP Exp {
 		;
 
 Args		: Exp COMMA Args {
-			$$ = (char *)newItem();
-			memcpy($$, $1, sizeof(Item));
-			((Item *)$$)->next = (Item *)$3;
-//			displayTable((Item *)$$);
+			  Item *d1 = (Item *)$1;
+			  Item *d3 = (Item *)$3;
+			  d1->next = d3;
+			  $$ = (char *)d1;
+			 // printf("Args->Exp COMMA Args: %lx->%lx\n", d1, d3);
+			 // printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s ret_type=%d \n\tret_type_name=%s name=%s dimension=%d line=%d\n", (unsigned long)d1, d1->line, d1->args_num, (unsigned long)d1->scope, d1->type, d1->type_name, d1->ret_type, d1->ret_type_name, d1->name, d1->dimension, d1->line);
+
 		  }
 		| Exp {
-			$$ = (char *)newItem();
-			memcpy($$, $1, sizeof(Item));
+			$$ = $1;
 			((Item *)$$)->next = NULL;
-//			displayTable((Item *)$$);
+		//	printf("Args->Exp: %lx->%lx\n", $$, NULL);
+			Item *d1 = (Item *)$$;
+		//	  printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s ret_type=%d \n\tret_type_name=%s name=%s dimension=%d line=%d\n", (unsigned long)d1, d1->line, d1->args_num, (unsigned long)d1->scope, d1->type, d1->type_name, d1->ret_type, d1->ret_type_name, d1->name, d1->dimension, d1->line);
 		  }
 		| /**/ {$$ = NULL;}
 		;

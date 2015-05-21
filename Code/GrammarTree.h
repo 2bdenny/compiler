@@ -159,4 +159,6 @@ bool cmpArgs(Item *def, Item *in);
 
 // 比较两个参数是否相等
 bool cmpItem(Item *it1, Item *it2);
+
+char *getAnonymousStruct();
 #endif

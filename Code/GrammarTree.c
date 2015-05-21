@@ -184,14 +184,20 @@ void insertTable(Item *x){
 			printf("Error type 3 at Line %d: var %s name has been used\n", x->line, x->name);
 			return;
 		}
+//		printf("insert %s now\n", x->name);
 		x->next = NULL;
 		if (table == NULL) {
 			table = x;
 			tail = x;
 		}
 		else {
+//				printf("tail=%lx\n", tail);
 			tail->next = x;
 			tail = x;
+//			if (cmp(x->name, "temp") == 0) {
+//				printf("tail=%lx\n", tail);
+//				displayTable(table);
+//			}
 		}
 	}
 //	displayTable(table);
@@ -200,17 +206,17 @@ void displayTable(Item *table){
 	printf("--------Current Table---------\n");
 	int number = -1;
 	Item *trace = table;
-	while (trace != NULL && trace->number > number){
-		printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s \n\tret_type=%d ret_type_name=%s name=%s line=%d\n", (unsigned long)trace, trace->line, trace->args_num, (unsigned long)trace->scope, trace->type, trace->type_name, trace->ret_type, trace->ret_type_name, trace->name, trace->line);
+	while (trace != NULL){
+		printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s ret_type=%d ret_type_name=%s \n\tname=%s dimension=%d line=%d next=%lx\n", (unsigned long)trace, trace->line, trace->args_num, (unsigned long)trace->scope, trace->type, trace->type_name, trace->ret_type, trace->ret_type_name, trace->name, trace->dimension, trace->line, (unsigned long)trace->next);
 		printf("\n");
-		number = trace->number;
 		trace = trace->next;
 	}
 	printf("------------------------------\n");
 }
 
 bool isContain(char *var){
-	if (var == NULL) return false;
+	// 保证匿名结构体都可以被保存
+	if (var == NULL || strlen(var) == 0) return false;
 	Item *trace = table;
 	while (trace != NULL){
 		if (trace->type == TYPE_STRUCT && cmp(trace->type_name, var) == 0) return true;
@@ -243,7 +249,7 @@ void setArgsNumber(char *item){
 		Item *trace = table;
 		((Item *)item)->args_num = 0;
 		while (trace != NULL){
-			if (trace->scope == (Item *)item) ((Item *)item)->args_num++;
+			if (trace->scope == (Item *)item && trace->type != TYPE_STRUCT) ((Item *)item)->args_num++;
 			trace = trace->next;
 		}
 	}
@@ -251,10 +257,16 @@ void setArgsNumber(char *item){
 
 bool cmpItem(Item *it1, Item *it2){
 	if ((it1 == NULL && it2 != NULL) || (it1 != NULL && it2 == NULL)) return false;
+	// 两个都是null，默认相等
 	else if (it1 == NULL && it2 == NULL) return true;
-	else if (it1->type == it2->type){
+	// 两个的类型相同，有两种情况（it1不可能出现function, if, else, while, struct类型, 只可能是var int, var float, var struct）
+	else if (it1->type == it2->type && (TYPE_VAR_INT == it1->type || TYPE_VAR_FLOAT == it1->type || TYPE_VAR_STRUCT == it1->type)){
+		// 如果恰好是结构体类型的变量
 		if (it1->type == TYPE_VAR_STRUCT){
-			if (cmp(it1->type_name, it2->type_name) == 0) return true;
+			// 结构体有名字且名字相同，默认相同
+			if (cmp(it1->type_name, it2->type_name) == 0 && 0 < strlen(it1->type_name)) return true;
+			// 结构体名字不同或者是匿名结构体，检查结构体成员
+			// 这里忘记处理匿名结构体了。。。
 			else {
 				Item *list1 = getStructMember((char *)getItem(it1->type_name));
 				Item *list2 = getStructMember((char *)getItem(it2->type_name));
@@ -267,28 +279,33 @@ bool cmpItem(Item *it1, Item *it2){
 	else return false;
 }
 
+// 获取函数的参数列表
 Item *getArgs(char *name){
 //	displayTable(table);
 	Item *result = NULL;
 	Item *result_tail = NULL;
 	Item *fun = getItem(name);
 	if (fun != NULL && fun->type == TYPE_FUNCTION){
+		// 参数总数
 		int total = fun->args_num;
+//		printf("total=%d\n", total);
 		Item *trace = table;
 		while (trace != NULL && total > 0){
-			if (trace->scope == fun){
+			// 前total个作用域是fun的变量就是函数的参数列表
+			// 这一点对于struct的成员变量也是一样的
+			if (trace->scope == fun && (trace->type == TYPE_VAR_INT || trace->type == TYPE_VAR_FLOAT || trace->type == TYPE_VAR_STRUCT)){
 				if (result == NULL){
 					result = newItem();
 					memcpy(result, trace, sizeof(Item));
-					tail = result;
-					tail->next = NULL;
+					result_tail = result;
+					result_tail->next = NULL;
 				}
 				else {
 					Item *temp = newItem();
 					memcpy(temp, trace, sizeof(Item));
-					tail->next = temp;
-					tail = temp;
-					tail->next = NULL;
+					result_tail->next = temp;
+					result_tail = temp;
+					result_tail->next = NULL;
 				}
 				total--;
 			}
@@ -296,15 +313,24 @@ Item *getArgs(char *name){
 		}
 		if (total > 0) printf("Error occur in get args\n");
 	}
+//	printf("函数的参数列表是:\n");
 //	displayTable(table);
 	return result;
 }
 bool cmpArgs(Item *def, Item *in){
+//	printf("------start cmp args------\n");
+//	printf("------def is------\n");
+//	displayTable(def);
+//	printf("------in is------\n");
+//	displayTable(in);
+//	printf("--------------------------\n");
 	while (def != NULL && in != NULL){
+		// 参数类型不匹配
 		if (!cmpItem(def, in)) return false;
 		def = def->next;
 		in = in->next;
 	}
+	// 参数个数不匹配
 	if (def != NULL || in != NULL) return false;
 	return true;
 }
@@ -316,7 +342,8 @@ Item *getStructMember(char *item){
 	else {
 		Item *trace = table;
 		while (trace != NULL) {
-			if (trace->scope == it){
+			// 符号表里所有的作用域为结构体的变量就是结构体的成员列表
+			if (trace->scope == it && (trace->type == TYPE_VAR_INT || trace->type == TYPE_VAR_FLOAT || trace->type == TYPE_VAR_STRUCT)){
 				if (result == NULL){
 					result = newItem();
 					memcpy(result, trace, sizeof(Item));
@@ -335,4 +362,11 @@ Item *getStructMember(char *item){
 		}
 	}
 	return result;
+}
+
+int anonymous = 0;
+char *getAnonymousStruct(){
+	char *name = (char *)malloc(ID_MAX_LEN*sizeof(char));
+	sprintf(name, "%d_", anonymous++);
+	return name;
 }
