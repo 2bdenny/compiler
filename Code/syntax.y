@@ -78,6 +78,8 @@ ExtDef		: Specifier ExtDecList{
 
 ExtDecList	: VarDec{
 			  $$ = $1;
+
+			  // middle start
 			  Item *var = (Item *)$1;
 			  Item *tp = getTempType();
 			  int arr_num = getArrayNum(var);
@@ -88,6 +90,7 @@ ExtDecList	: VarDec{
 			$$ = $1;
 			((Item *)$$)->next = (Item *)$3;
 
+			// middle start
 			Item *var = (Item *)$1;
 			Item *tp = getTempType();
 			int arr_num = getArrayNum(var);
@@ -391,6 +394,13 @@ DecList		: Dec {
 
 Dec		: VarDec{
 			  $$ = $1;
+
+			  // middle start
+			  Item *tp = getTempType();
+			  Item *var = (Item *)$1;
+			  int arr_num = getArrayNum(var);
+			  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
+			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
 		  }
 		| VarDec ASSIGNOP Exp {
 			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT)){
