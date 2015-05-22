@@ -65,7 +65,6 @@ ExtDef		: Specifier ExtDecList{
 			$$ = $2;
 			((Item *)$$)->ret_type = ((Item *)$1)->type;
 			cpy(((Item *)$$)->ret_type_name, ((Item *)$1)->type_name);
-//			insertTable((Item *)$$);
 			setScope((Item *)$$);
 		  } CompSt {
 			setScope(NULL);
@@ -79,10 +78,21 @@ ExtDef		: Specifier ExtDecList{
 
 ExtDecList	: VarDec{
 			  $$ = $1;
+			  Item *var = (Item *)$1;
+			  Item *tp = getTempType();
+			  int arr_num = getArrayNum(var);
+			  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, getTypeSize(tp)*arr_num);
+			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
 		  }
 		| VarDec COMMA ExtDecList	{
 			$$ = $1;
 			((Item *)$$)->next = (Item *)$3;
+
+			Item *var = (Item *)$1;
+			Item *tp = getTempType();
+			int arr_num = getArrayNum(var);
+			if (arr_num > 0) printf("DEC %s [%d]\n", var->name, getTypeSize(tp)*arr_num);
+			else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
 		  }
 		;
 
@@ -91,10 +101,12 @@ Specifier	: TYPE {  // 符号表建立相关
 			  if (cmp(((Leaf *)$1)->val.val_name, "int") == 0) ((Item *)$$)->type = TYPE_VAR_INT;
 			  else if (cmp(((Leaf *)$1)->val.val_name, "float") == 0) ((Item *)$$)->type = TYPE_VAR_FLOAT;
 			  ((Item *)$$)->scope = getScope();
+			  saveTempType((Item *)$$);
 		  }
 		| StructSpecifier {
 			$$ = $1;
 			((Item *)$$)->type = TYPE_VAR_STRUCT;
+			saveTempType((Item *)$$);
 		  }
 		;
 
@@ -189,6 +201,9 @@ FunDec		: ID LP {
 			  else printf("$1 is null\n");
 			  insertTable((Item *)$2);
 			  setScope((Item *)$2);
+
+			  // middle start
+			  printf("FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
 		  } VarList RP{
 			  $$ = $2;
 			  setArgsNumber($2);
@@ -206,6 +221,9 @@ FunDec		: ID LP {
 			if ($1 != NULL) cpy(((Item *)$$)->name, ((Leaf *)$1)->val.val_name);
 			else printf("$1 is null\n");
 			insertTable((Item *)$$);
+
+			// middle start
+			printf("FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
 		  }
 		| error RP %prec FUN_ERR	{}
 		;

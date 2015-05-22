@@ -41,3 +41,6 @@ scanner
 *.tab.h
 *.txt
 *.swp
+*/tags
+Code/tags
+./Code/tags

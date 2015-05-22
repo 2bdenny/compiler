@@ -161,4 +161,16 @@ bool cmpArgs(Item *def, Item *in);
 bool cmpItem(Item *it1, Item *it2);
 
 char *getAnonymousStruct();
+
+//获取类型的空间大小
+int getTypeSize(Item *it);
+
+int getStructSize(Item *it);
+
+//获取变量数组内元素个数，例如a[5][3]有3*5=15个
+int getArrayNum(Item *it);
+
+//临时保存类型和读取类型
+void saveTempType(Item *tp);
+Item *getTempType();
 #endif

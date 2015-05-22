@@ -370,3 +370,56 @@ char *getAnonymousStruct(){
 	sprintf(name, "%d_", anonymous++);
 	return name;
 }
+
+
+Item *temp_type = NULL;
+int getStructSize(Item *it){
+	if (it == NULL) return -1;
+	if (TYPE_STRUCT == it->type || TYPE_VAR_STRUCT == it->type){
+		int result = 0;
+		Item *def = getItem(it->type_name);
+		Item *mems = getStructMember((char *)def);
+		Item *trace = mems;
+		while (trace != NULL){
+			switch(trace->type){
+				case TYPE_VAR_INT: result += 4; break;
+				case TYPE_VAR_FLOAT: result += 4; break;
+				case TYPE_VAR_STRUCT: result += getStructSize(trace); break;
+				default: break;
+			}
+			trace = trace->next;
+		}
+		return result;
+	}
+	else return -1;
+}
+int getTypeSize(Item *it){
+	if (it == NULL) return -1;
+	switch(it->type){
+		case TYPE_VAR_INT: return 4;
+		case TYPE_VAR_FLOAT: return 4;
+		case TYPE_VAR_STRUCT: return getStructSize(it);
+		default: return -1;
+	}
+}
+int getArrayNum(Item *it){
+	if (it == NULL) return -1;
+	int result = 0;
+	if (0 >= it->dimension) return result;
+	else if (NULL == it->dim_max)
+		printf("Error occurred when getArrayNum, it->dim_max = NULL but dimension > 0\n");
+	else {
+		result = 1;
+		int i;
+		for (i = 0; i < it->dimension; i ++) result *= it->dim_max[i];
+	}
+	return result;
+}
+void saveTempType(Item *tp){
+	if (NULL == temp_type) temp_type = newItem();
+	if (tp != NULL) memcpy(temp_type, tp, sizeof(Item));
+	else printf("Error occurred when saveTempType, tp is null\n");
+}
+Item *getTempType(){
+	return temp_type;
+}
