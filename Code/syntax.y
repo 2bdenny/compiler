@@ -402,12 +402,20 @@ Dec		: VarDec{
 			  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
 			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
 		  }
-		| VarDec ASSIGNOP Exp {
+		| VarDec {
+
+			  // middle start
+			  Item *tp = getTempType();
+			  Item *var = (Item *)$1;
+			  int arr_num = getArrayNum(var);
+			  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
+			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+		  }ASSIGNOP Exp {
 			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT)){
 				  printf("Error type 15 at Line %d: can not = in struct\n", ((Item *)$1)->line);
 			  }
 			  Item *e1 = (Item *)$1;
-			  Item *e2 = (Item *)$3;
+			  Item *e2 = (Item *)$4;
 //			  printf("=: %s type= %d\n", e1->name, e2->type);
 			  if (TYPE_FUNCTION == e2->type) {
 				  e1->type = e2->ret_type;
