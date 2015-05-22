@@ -239,16 +239,19 @@ VarList		: ParamDec COMMA VarList {
 		;
 
 ParamDec	: Specifier VarDec {
-			//  printf("vardec\n");
-			//  displayTable((Item *)$2);
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
-			  while (trace != NULL){
+			  if (trace != NULL){
 				  item->type = ((Item *)$1)->type;
 				  cpy(item->type_name, ((Item *)$1)->type_name);
-				  trace = trace->next;
 				  insertTable(item);
-				  item = trace;
+
+				  //middle start
+				  Item *tp = (Item *)$1;
+				  Item *var = (Item *)$2;
+				  int arr_num = getArrayNum(var);
+				  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
+				  else if (TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
 			  }
 		  }
 		;

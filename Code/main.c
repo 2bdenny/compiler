@@ -23,7 +23,7 @@ int main(int argc, char *argv[]){
 //		display(forest->tree, 0);
 //		analyse(forest->tree);
 //		printf("\n\n\n\n\n\n");
-//		displayTable(table);
+		displayTable(table);
 
 //		analyse(forest->tree);
 		destroyForest();
