@@ -166,6 +166,7 @@ Item *newItem(){
 
 	result->dimension = -1;
 	result->dim_max = NULL;
+	result->offset = 0;
 	result->next = NULL;
 
 	return result;
@@ -422,4 +423,12 @@ void saveTempType(Item *tp){
 }
 Item *getTempType(){
 	return temp_type;
+}
+
+int temp_var_num = 0;
+char *getTempVar(){
+	char *name = (char *)malloc(ID_MAX_LEN*sizeof(char));
+	memset(name, 0, ID_MAX_LEN);
+	sprintf(name, "v%d", temp_var_num++);
+	return name;
 }

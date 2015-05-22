@@ -86,6 +86,7 @@ typedef struct item{
 
 	int dimension;
 	int *dim_max;
+	int offset;
 
 	struct item *next;
 }Item;
@@ -173,4 +174,7 @@ int getArrayNum(Item *it);
 //临时保存类型和读取类型
 void saveTempType(Item *tp);
 Item *getTempType();
+
+//生成临时变量名
+char *getTempVar();
 #endif

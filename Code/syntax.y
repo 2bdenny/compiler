@@ -83,8 +83,8 @@ ExtDecList	: VarDec{
 			  Item *var = (Item *)$1;
 			  Item *tp = getTempType();
 			  int arr_num = getArrayNum(var);
-			  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, getTypeSize(tp)*arr_num);
-			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+			  if (arr_num > 0) printf("DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
+			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
 		  }
 		| VarDec COMMA ExtDecList	{
 			$$ = $1;
@@ -94,8 +94,8 @@ ExtDecList	: VarDec{
 			Item *var = (Item *)$1;
 			Item *tp = getTempType();
 			int arr_num = getArrayNum(var);
-			if (arr_num > 0) printf("DEC %s [%d]\n", var->name, getTypeSize(tp)*arr_num);
-			else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+			if (arr_num > 0) printf("DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
+			else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
 		  }
 		;
 
@@ -397,8 +397,8 @@ Dec		: VarDec{
 				  Item *tp = getTempType();
 				  Item *var = (Item *)$1;
 				  int arr_num = getArrayNum(var);
-				  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
-				  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+				  if (arr_num > 0) printf("DEC %s %d\n", var->name, arr_num*getTypeSize(tp));
+				  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
 			  }
 		  }
 		| VarDec {
@@ -408,8 +408,8 @@ Dec		: VarDec{
 				Item *tp = getTempType();
 				Item *var = (Item *)$1;
 				int arr_num = getArrayNum(var);
-				if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
-				else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+				if (arr_num > 0) printf("DEC %s %d\n", var->name, arr_num*getTypeSize(tp));
+				else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
 			}
 		  }ASSIGNOP Exp {
 			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT)){
@@ -465,14 +465,18 @@ Exp		: Exp ASSIGNOP Exp {
 			int t1 = e1->type;
 			int t2 = e2->type;
 			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
-				$$ = $1;
-				((Item *)$$)->type = TYPE_INT;
+				e1->type = TYPE_INT;
 			}
 			else {
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 				e1->type = TYPE_INT;
-				$$ = (char *)e1;
 			}
+
+			// middle start
+			char *dollar = getTempVar();
+			printf("%s := %s && %s\n", dollar, e1->name, e2->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }
 		| Exp OR Exp {
 			Item *e1 = (Item *)$1;
@@ -480,14 +484,18 @@ Exp		: Exp ASSIGNOP Exp {
 			int t1 = e1->type;
 			int t2 = e2->type;
 			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
-				$$ = $1;
-				((Item *)$$)->type = TYPE_INT;
+				e1->type = TYPE_INT;
 			}
 			else {
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 				e1->type = TYPE_INT;
-				$$ = (char *)e1;
 			}
+
+			// middle start
+			char *dollar = getTempVar();
+			printf("%s := %s || %s\n", dollar, e1->name, e2->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }
 		| Exp RELOP Exp {
 			Item *e1 = (Item *)$1;
@@ -495,14 +503,18 @@ Exp		: Exp ASSIGNOP Exp {
 			int t1 = e1->type;
 			int t2 = e2->type;
 			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
-				$$ = $1;
-				((Item *)$$)->type = TYPE_INT;
+				e1->type = TYPE_INT;
 			}
 			else {
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
 				e1->type = TYPE_INT;
-				$$ = (char *)e1;
 			}
+
+			//middle start
+			char *dollar = getTempVar();
+			printf("%s := %s %s %s\n", dollar, e1->name, ((Leaf *)$2)->val.val_name, e2->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }
 		| Exp PLUS Exp {
 			Item *e1 = (Item *)$1;
@@ -511,13 +523,20 @@ Exp		: Exp ASSIGNOP Exp {
 			int t2 = e2->type;
 			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
 				e1->type = TYPE_INT;
-				$$ = (char *)e1;
 			}
 			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
 				e1->type = TYPE_FLOAT;
-				$$ = (char *)e1;
 			}
-			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			else {
+				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+				e1->type = TYPE_INT;
+			}
+
+			//middle start
+			char *dollar = getTempVar();
+			printf("%s := %s + %s\n", dollar, e1->name, e2->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }
 		| Exp MINUS Exp {
 			Item *e1 = (Item *)$1;
@@ -526,13 +545,20 @@ Exp		: Exp ASSIGNOP Exp {
 			int t2 = e2->type;
 			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
 				e1->type = TYPE_INT;
-				$$ = (char *)e1;
 			}
 			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
 				e1->type = TYPE_FLOAT;
-				$$ = (char *)e1;
 			}
-			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			else {
+				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+				e1->type = TYPE_INT;
+			}
+
+			//middle start
+			char *dollar = getTempVar();
+			printf("%s := %s - %s\n", dollar, e1->name, e2->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }		
 		| Exp STAR Exp {
 			Item *e1 = (Item *)$1;
@@ -541,13 +567,20 @@ Exp		: Exp ASSIGNOP Exp {
 			int t2 = e2->type;
 			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
 				e1->type = TYPE_INT;
-				$$ = (char *)e1;
 			}
 			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
 				e1->type = TYPE_FLOAT;
-				$$ = (char *)e1;
 			}
-			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			else {
+				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+				e1->type = TYPE_INT;
+			}
+
+			//middle start
+			char *dollar = getTempVar();
+			printf("%s := %s * %s\n", dollar, e1->name, e2->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }		
 		| Exp DIV Exp {
 			Item *e1 = (Item *)$1;
@@ -556,13 +589,20 @@ Exp		: Exp ASSIGNOP Exp {
 			int t2 = e2->type;
 			if ((TYPE_VAR_INT == t1 || TYPE_INT == t1) && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
 				e1->type = TYPE_INT;
-				$$ = (char *)e1;
 			}
 			else if ((TYPE_VAR_FLOAT == t1 || TYPE_FLOAT == t1) && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
 				e1->type = TYPE_FLOAT;
-				$$ = (char *)e1;
 			}
-			else printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+			else {
+				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
+				e1->type = TYPE_INT;
+			}
+
+			//middle start
+			char *dollar = getTempVar();
+			printf("%s := %s * %s\n", dollar, e1->name, e2->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }		
 		| LP Exp RP %prec LL_THAN_ELSE	{$$ = $2;}
 		| MINUS Exp %prec HIGH_MINUS {
@@ -661,6 +701,23 @@ Exp		: Exp ASSIGNOP Exp {
 					memcpy(dollar, component, sizeof(Item));
 					dollar->dimension = 0;
 					dollar->dim_max = NULL;
+
+					// middle start
+					if (NULL != def){
+						Item *mems = getStructMem(def);
+						Item *trace = mems;
+						int offset = 0;
+						while (trace != NULL && 0 != cmp(trace->name, mem->val.val_name)) {
+							int arr_num = getArrayNum(trace);
+							if (arr_num > 0) offset += arr_num*getTypeSize(trace);
+							else offset += getTypeSize(trace);
+							trace = trace->next;
+						}
+						assert(trace != NULL);
+						dollar->offset += offset;
+					}
+					//////////////////start over here
+
 					$$ = (char *)dollar;
 				}
 			}
@@ -687,6 +744,7 @@ Exp		: Exp ASSIGNOP Exp {
 			Item *tmp = newItem();
 			tmp->line = ((Leaf *)$1)->line;
 			tmp->type = TYPE_INT;
+			sprintf(tmp->name, "#%d", ((Leaf *)$1)->val.val_int);
 			$$ = (char *)tmp;
 //			printf("exp type=%d\n", ((Item *)$$)->type);
 		  }
@@ -694,6 +752,7 @@ Exp		: Exp ASSIGNOP Exp {
 			Item *tmp = newItem();
 			tmp->line = ((Leaf *)$1)->line;
 			tmp->type = TYPE_FLOAT;
+			sprintf(tmp->name, "#%lf", ((Leaf *)$1)->val.val_double);
 			$$ = (char *)tmp;
 //			printf("exp type=%d\n", ((Item *)$$)->type);
 		  }
