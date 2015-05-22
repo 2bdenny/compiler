@@ -250,11 +250,7 @@ ParamDec	: Specifier VarDec {
 				  insertTable(item);
 
 				  //middle start
-				  Item *tp = (Item *)$1;
-				  Item *var = (Item *)$2;
-				  int arr_num = getArrayNum(var);
-				  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
-				  else if (TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+				  printf("PARAM %s\n", item->name);
 			  }
 		  }
 		;
@@ -396,27 +392,31 @@ Dec		: VarDec{
 			  $$ = $1;
 
 			  // middle start
-			  Item *tp = getTempType();
-			  Item *var = (Item *)$1;
-			  int arr_num = getArrayNum(var);
-			  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
-			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT));
+			  else{
+				  Item *tp = getTempType();
+				  Item *var = (Item *)$1;
+				  int arr_num = getArrayNum(var);
+				  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
+				  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+			  }
 		  }
 		| VarDec {
-
-			  // middle start
-			  Item *tp = getTempType();
-			  Item *var = (Item *)$1;
-			  int arr_num = getArrayNum(var);
-			  if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
-			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+			// middle start
+			if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT));
+			else{
+				Item *tp = getTempType();
+				Item *var = (Item *)$1;
+				int arr_num = getArrayNum(var);
+				if (arr_num > 0) printf("DEC %s [%d]\n", var->name, arr_num*getTypeSize(tp));
+				else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s [%d]\n", var->name, getTypeSize(tp));
+			}
 		  }ASSIGNOP Exp {
 			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT)){
 				  printf("Error type 15 at Line %d: can not = in struct\n", ((Item *)$1)->line);
 			  }
 			  Item *e1 = (Item *)$1;
 			  Item *e2 = (Item *)$4;
-//			  printf("=: %s type= %d\n", e1->name, e2->type);
 			  if (TYPE_FUNCTION == e2->type) {
 				  e1->type = e2->ret_type;
 				  cpy(e1->type_name, e2->ret_type_name);
