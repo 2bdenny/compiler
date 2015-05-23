@@ -15,6 +15,7 @@ int main(int argc, char *argv[]){
 			perror(argv[1]);
 			return 1;
 		}
+		initTable();
 		yyrestart(f);
 //		printf("yyrestart ok\n");
 //		yydebug = 1;

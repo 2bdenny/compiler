@@ -180,4 +180,7 @@ char *getTempVar();
 
 //万一是数组。。。妈蛋烦死了简直
 void printExp(Item **exp);
+
+//初始化，read和write
+void initTable();
 #endif

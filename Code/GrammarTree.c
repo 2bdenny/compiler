@@ -450,3 +450,31 @@ void printExp(Item **exp){
 		}
 	}
 }
+
+void initTable(){
+	Item *read = newItem();
+	read->scope = NULL;
+	read->args_num = 0;
+	read->type = TYPE_FUNCTION;
+	read->ret_type = TYPE_INT;
+	cpy(read->name, "read");
+
+	insertTable(read);
+
+	Item *write = newItem();
+	write->scope = NULL;
+	write->args_num = 1;
+	write->type = TYPE_FUNCTION;
+	write->ret_type = TYPE_INT;
+	cpy(write->name, "write");
+
+	insertTable(write);
+
+	Item *arg = newItem();
+	arg->scope = write;
+	arg->type = TYPE_VAR_INT;
+	cpy(arg->name, "arg");
+	arg->dimension = 0;
+
+	insertTable(arg);
+}

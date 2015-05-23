@@ -273,13 +273,19 @@ CompSt		: LC DefList StmtList RC{
 StmtList	: Stmt StmtList {
 			  if ($2 == NULL) $$ = $1;
 			  else $$ = $2;
-//			  printf("$$ result type = %d\n", ((Item *)$$)->result_type);
 		  }
 		| /* empty */ { $$ = NULL; }
 		;
 
 Stmt		: Exp SEMI {
 			  $$ = $1;
+
+			  // middle start
+			  Item *e1 = (Item *)$1;
+			  if (memcmp(e1->name, "CALL", 4) == 0){
+				  printExp(&e1);
+				  printf("%s\n", e1->name);
+			  }
 		  }
 		| CompSt {$$ = $1;}
 		| RETURN Exp SEMI {
@@ -288,7 +294,10 @@ Stmt		: Exp SEMI {
 			Item *t2 = (Item *)$2;
 			t0->result_type = t2->type;
 			cpy(t0->result_type_name, t2->type_name);
-//			if ($$ != NULL) printf("return result_type = %d\n", ((Item *)$$)->result_type);
+
+			// middle start
+			printExp(&t2);
+			printf("RETURN %s\n", t2->name);
 		  }
 		| IF LP Exp RP {
 			Item *cond = (Item *)$3;
@@ -726,21 +735,42 @@ Exp		: Exp ASSIGNOP Exp {
 				  printf("Error type 9 at Line %d: args not match of function %s\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
 			  }
 			  // middle start
-			  Item *trace = in_args;
-			  while (trace != NULL){
-				  printExp(&trace);
-				  printf("ARG %s\n", trace->name);
-				  trace = trace->next;
-			  }
-
 			  Item *fun = getItem(((Leaf *)$1)->val.val_name);
 			  Item *dollar = newItem();
 			  if (fun != NULL){
 				  dollar->type = fun->ret_type;
 				  cpy(dollar->type_name, fun->ret_type_name);
-				  memset(dollar->name, 0, ID_MAX_LEN);
-				  sprintf(dollar->name, "CALL %s", ((Leaf *)$1)->val.val_name);
 			  }
+
+			  if (cmp(((Leaf *)$1)->val.val_name, "read") == 0) {
+				  char *tvar0 = getTempVar();
+				  printf("READ %s\n", tvar0);
+				  memset(dollar->name, 0, ID_MAX_LEN);
+				  sprintf(dollar->name, "%s", tvar0);
+			  }
+			  else {
+				  Item *trace = in_args;
+				  while (trace != NULL){
+					  printExp(&trace);
+					  printf("ARG %s\n", trace->name);
+					  trace = trace->next;
+				  }
+				  if (fun != NULL){
+					  if (cmp(fun->name, "write") == 0){
+						  dollar->type = TYPE_INT;
+						  printf("WRITE %s\n", in_args->name);
+						  memset(dollar->name, 0, ID_MAX_LEN);
+						  sprintf(dollar->name, "#0");
+					  }
+					  else {
+						  dollar->type = fun->ret_type;
+						  cpy(dollar->type_name, fun->ret_type_name);
+						  memset(dollar->name, 0, ID_MAX_LEN);
+						  sprintf(dollar->name, "CALL %s", ((Leaf *)$1)->val.val_name);
+					  }
+				  }
+			  }
+
 			  $$ = (char *)dollar;
 		  }
 		| Exp LB Exp RB	{
