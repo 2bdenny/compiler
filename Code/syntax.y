@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include "lex.yy.c"
 #include "GrammarTree.h"
 #define print_pos() printf("[%s %s %d]\n", __FILE__, __FUNCTION__, __LINE__)	//这个宏定义学自余子洵
@@ -683,16 +684,12 @@ Exp		: Exp ASSIGNOP Exp {
 		| Exp DOT ID {
 			Leaf *mem = (Leaf *)$3;
 			Item *exp = (Item *)$1;
-			Item *var = getItem(exp->name);
-			if (var->type != TYPE_VAR_STRUCT) {
+			if (exp->type != TYPE_VAR_STRUCT) {
 				printf("Error type 13 at Line %d: %s not a struct\n", ((Leaf *)$2)->line, exp->name);
-			}
-			else if (exp->dimension < var->dimension){
-				printf("Error type 10 at Line %d: %s dimension not match\n", ((Leaf *)$2)->line, exp->name);
 			}
 			else {
 				Item *component = getItem(mem->val.val_name);
-				Item *def = getItem(var->type_name);
+				Item *def = getItem(exp->type_name);
 				if (component == NULL || component->scope != def) {
 					printf("Error type 14 at Line %d: %s not %s 's component\n", ((Leaf *)$2)->line, component->name, exp->type_name);
 				}
@@ -704,10 +701,10 @@ Exp		: Exp ASSIGNOP Exp {
 
 					// middle start
 					if (NULL != def){
-						Item *mems = getStructMem(def);
+						Item *mems = getStructMember((char *)def);
 						Item *trace = mems;
 						int offset = 0;
-						while (trace != NULL && 0 != cmp(trace->name, mem->val.val_name)) {
+						while (trace != NULL && NULL != mem && 0 != cmp(trace->name, mem->val.val_name)) {
 							int arr_num = getArrayNum(trace);
 							if (arr_num > 0) offset += arr_num*getTypeSize(trace);
 							else offset += getTypeSize(trace);
@@ -715,8 +712,16 @@ Exp		: Exp ASSIGNOP Exp {
 						}
 						assert(trace != NULL);
 						dollar->offset += offset;
+
+						char *tvar = getTempVar();
+						assert(NULL != exp);
+						printf("%s := &%s\n", tvar, exp->name);
+						char *tvar1 = getTempVar();
+						printf("%s := %s + #%d\n", tvar1, tvar, offset);
+						char *tvar2 = getTempVar();
+						printf("%s := *%s\n", tvar2, tvar1);
+						cpy(dollar->name, tvar2);
 					}
-					//////////////////start over here
 
 					$$ = (char *)dollar;
 				}
