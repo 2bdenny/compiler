@@ -721,16 +721,25 @@ Exp		: Exp ASSIGNOP Exp {
 		  Args RP {
 			  Item *def_args = getArgs(((Leaf *)$1)->val.val_name);
 			  Item *in_args = (Item *)$4;
-			  //printf("args start at %lx\n", $4);
 
 			  if (!cmpArgs(def_args, in_args)){
 				  printf("Error type 9 at Line %d: args not match of function %s\n", ((Leaf *)$1)->line, ((Leaf *)$1)->val.val_name);
 			  }
+			  // middle start
+			  Item *trace = in_args;
+			  while (trace != NULL){
+				  printExp(&trace);
+				  printf("ARG %s\n", trace->name);
+				  trace = trace->next;
+			  }
+
 			  Item *fun = getItem(((Leaf *)$1)->val.val_name);
 			  Item *dollar = newItem();
 			  if (fun != NULL){
 				  dollar->type = fun->ret_type;
-				  cpy(dollar->name, fun->ret_type_name);
+				  cpy(dollar->type_name, fun->ret_type_name);
+				  memset(dollar->name, 0, ID_MAX_LEN);
+				  sprintf(dollar->name, "CALL %s", ((Leaf *)$1)->val.val_name);
 			  }
 			  $$ = (char *)dollar;
 		  }
@@ -885,15 +894,15 @@ Exp		: Exp ASSIGNOP Exp {
 		;
 
 Args		: Exp COMMA Args {
-			  Item *d1 = (Item *)$1;
-			  Item *d3 = (Item *)$3;
-			  d1->next = d3;
-			  $$ = (char *)d1;
+			  Item *e1 = (Item *)$1;
+			  Item *e3 = (Item *)$3;
+			  e1->next = e3;
+			  $$ = (char *)e1;
 			 // printf("Args->Exp COMMA Args: %lx->%lx\n", d1, d3);
 			 // printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s ret_type=%d \n\tret_type_name=%s name=%s dimension=%d line=%d\n", (unsigned long)d1, d1->line, d1->args_num, (unsigned long)d1->scope, d1->type, d1->type_name, d1->ret_type, d1->ret_type_name, d1->name, d1->dimension, d1->line);
-
 		  }
 		| Exp {
+			Item *e = (Item *)$1;
 			$$ = $1;
 			((Item *)$$)->next = NULL;
 		//	printf("Args->Exp: %lx->%lx\n", $$, NULL);
