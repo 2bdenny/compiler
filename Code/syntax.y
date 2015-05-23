@@ -427,6 +427,30 @@ Dec		: VarDec{
 				cpy(e1->type_name, e2->type_name);
 			  }
 			  e1->scope = getScope();
+
+			  // middle start
+			  Item *tp = getTempType();
+			  if (TYPE_VAR_INT == tp->type || TYPE_VAR_FLOAT == tp->type){
+				  printExp(&e2);
+				  printf("%s := %s\n", e1->name, e2->name);
+			  }
+			  else if (TYPE_VAR_STRUCT == tp->type){
+				  printExp(&e2);
+				  int size = getTypeSize(tp);
+				  int i = 0;
+				  char *tvar1 = getTempVar();
+				  char *tvar2 = getTempVar();
+				  printf("%s := &%s\n", tvar1, e1->name);
+				  printf("%s := &%s\n", tvar2, e2->name);
+				  for (; i < size; i += 4){
+					  printf("*%s := *%s\n", tvar1, tvar2);
+					  if (i+4 < size){
+						  printf("%s := %s + #4\n", tvar1, tvar1);
+						  printf("%s := %s + #4\n", tvar2, tvar2);
+					  }
+				  }
+			  }
+
 			  $$ = (char *)e1;
 		  }
 		;
@@ -438,10 +462,16 @@ Exp		: Exp ASSIGNOP Exp {
 			  int t2 = e2->type;
 			  if (t1 == TYPE_VAR_INT || t1 == TYPE_VAR_FLOAT || t1 == TYPE_VAR_STRUCT){
 				  if (TYPE_VAR_INT == t1 && (TYPE_VAR_INT == t2 || TYPE_INT == t2)){
+					  // middle start
+					  printExp(&e1);
+					  printExp(&e2);
+					  printf("%s := %s\n", e1->name, e2->name);
 				  }
 				  else if (TYPE_VAR_FLOAT == t1 && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
-				  }
-				  else if (TYPE_VAR_STRUCT == t1 && TYPE_VAR_STRUCT != t2){
+					  // middle start
+					  printExp(&e1);
+					  printExp(&e2);
+					  printf("%s := %s\n", e1->name, e2->name);
 				  }
 				  else if (TYPE_VAR_STRUCT == t1 && TYPE_VAR_STRUCT == t2){
 					  Item *s1 = getItem(((Item *)$1)->type_name);
@@ -450,6 +480,24 @@ Exp		: Exp ASSIGNOP Exp {
 					  Item *list2 = getStructMember((char *)s2);
 					  if (cmpArgs(list1, list2) != true)
 						  printf("Error type 5 at Line %d: structure not match of =\n", ((Leaf*)$2)->line);
+					  else {
+						  // middle start
+						  printExp(&e1);
+						  printExp(&e2);
+						  int size = getTypeSize(e1);
+						  int i = 0;
+						  char *tvar1 = getTempVar();
+						  char *tvar2 = getTempVar();
+						  printf("%s := &%s\n", tvar1, e1->name);
+						  printf("%s := &%s\n", tvar2, e2->name);
+						  for (; i < size; i += 4){
+							  printf("*%s := *%s\n", tvar1, tvar2);
+							  if (i+4 < size){
+								  printf("%s := %s + #4\n", tvar1, tvar1);
+								  printf("%s := %s + #4\n", tvar2, tvar2);
+							  }
+						  }
+					  }
 				  }
 				  else printf("Error type 5 at Line %d: type not match of =\n", ((Leaf *)$2)->line);
 				  $$ = $1;
@@ -625,29 +673,39 @@ Exp		: Exp ASSIGNOP Exp {
 			int t1 = e1->type;
 			if (TYPE_INT == t1 || TYPE_VAR_INT == t1){
 				e1->type = TYPE_INT;
-				$$ = $2;
 			}
 			else if (TYPE_FLOAT == t1 || TYPE_VAR_FLOAT == t1){
 				e1->type = TYPE_FLOAT;
-				$$ = $2;
 			}
 			else {
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$1)->line, ((Leaf *)$1)->token);
-				$$ = $2;
+				e1->type = TYPE_INT;
 			}
+
+			// middle start
+			printExp(&e1);
+			char *dollar = getTempVar();
+			printf("%s := #0 - %s\n", dollar, e1->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }
 		| NOT Exp{
 			Item *e1 = (Item *)$2;
 			int t1 = e1->type;
 			if (TYPE_INT == t1 || TYPE_VAR_INT == t1){
-				$$ = $2;
-				((Item *)$$)->type = TYPE_INT;
+				e1->type = TYPE_INT;
 			}
 			else {
 				printf("Error type 7 at Line %d: not match of %s\n", ((Leaf *)$2)->line, ((Leaf *)$2)->token);
-				$$ = $2;
-				((Item *)$$)->type = TYPE_INT;
+				e1->type = TYPE_INT;
 			}
+
+			// middle start
+			printExp(&e1);
+			char *dollar = getTempVar();
+			printf("%s := !%s\n", dollar, e1->name);
+			cpy(e1->name, dollar);
+			$$ = (char *)e1;
 		  }
 		| ID LP {
 			Item *fun = getItem(((Leaf *)$1)->val.val_name);
