@@ -473,7 +473,9 @@ Exp		: Exp ASSIGNOP Exp {
 				e1->type = TYPE_INT;
 			}
 
-			// middle start
+			//middle start
+			printExp(&e1);
+			printExp(&e2);
 			char *dollar = getTempVar();
 			printf("%s := %s && %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
@@ -493,6 +495,8 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			// middle start
+			printExp(&e1);
+			printExp(&e2);
 			char *dollar = getTempVar();
 			printf("%s := %s || %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
@@ -512,6 +516,8 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			//middle start
+			printExp(&e1);
+			printExp(&e2);
 			char *dollar = getTempVar();
 			printf("%s := %s %s %s\n", dollar, e1->name, ((Leaf *)$2)->val.val_name, e2->name);
 			cpy(e1->name, dollar);
@@ -534,6 +540,8 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			//middle start
+			printExp(&e1);
+			printExp(&e2);
 			char *dollar = getTempVar();
 			printf("%s := %s + %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
@@ -556,6 +564,8 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			//middle start
+			printExp(&e1);
+			printExp(&e2);
 			char *dollar = getTempVar();
 			printf("%s := %s - %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
@@ -578,6 +588,8 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			//middle start
+			printExp(&e1);
+			printExp(&e2);
 			char *dollar = getTempVar();
 			printf("%s := %s * %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
@@ -600,6 +612,8 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			//middle start
+			printExp(&e1);
+			printExp(&e2);
 			char *dollar = getTempVar();
 			printf("%s := %s * %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
@@ -672,6 +686,43 @@ Exp		: Exp ASSIGNOP Exp {
 					if (var->dimension > def->dimension){
 						printf("Error type 10 at Line %d: %s not array or dimension not match\n", ((Leaf *)$2)->line, var->name);
 					}
+					else {
+						// middle start
+						int dim_step = 1;
+						int i;
+						for (i = var->dimension; i < def->dimension; i ++) dim_step *= def->dim_max[i];
+						dim_step *= getTypeSize(def);
+						char *tvar0 = getTempVar();
+						if (var->dimension == 1) {
+							if (var3->dimension > 0) {
+								char *tvar00 = getTempVar();
+								printf("%s := &%s\n", tvar00, var3->name);
+								printf("%s := %s + %s\n", tvar00, tvar00, var3->offset);
+								printf("%s := *%s\n", tvar00, tvar00);
+								memset(var3->name, 0, ID_MAX_LEN);
+								sprintf(var3->name, "%s", tvar00);
+								var3->dimension = 0;
+							}
+							printf("%s := %s * #%d\n", tvar0, var3->name, dim_step);
+							sprintf(var->offset, "%s", tvar0);
+						}
+						else {
+							if (var3->dimension > 0) {
+								char *tvar00 = getTempVar();
+								printf("%s := &%s\n", tvar00, var3->name);
+								printf("%s := %s + %s\n", tvar00, tvar00, var3->offset);
+								printf("%s := *%s\n", tvar00, tvar00);
+								memset(var3->name, 0, ID_MAX_LEN);
+								sprintf(var3->name, "%s", tvar00);
+								var3->dimension = 0;
+							}
+							printf("%s := %s * #%d\n", tvar0, var3->name, dim_step);
+							char *tvar1 = getTempVar();
+							printf("%s := %s + %s\n", tvar1, tvar0, var->offset);
+							memset(var->offset, 0, 2*ID_MAX_LEN);
+							sprintf(var->offset, "%s", tvar1);
+						}
+					}
 				}
 				else {
 					printf("Error type 12 at Line %d: error type between [ ]\n", ((Leaf *)$2)->line);
@@ -679,7 +730,6 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 			else printf("Error type 10 at Line %d: %s not array\n", ((Leaf *)$2)->line, var->name);
 			$$ = (char *)var;
-//			printf("%d: type=%d, type_name=%s\n", var->line, var->type, var->type_name);
 		  }
 		| Exp DOT ID {
 			Leaf *mem = (Leaf *)$3;
@@ -711,10 +761,21 @@ Exp		: Exp ASSIGNOP Exp {
 							trace = trace->next;
 						}
 						assert(trace != NULL);
-						dollar->offset += offset;
 
 						char *tvar = getTempVar();
 						assert(NULL != exp);
+
+						// array cond
+						if (exp->dimension > 0) {
+							char *tvar00 = getTempVar();
+							printf("%s := &%s\n", tvar00, exp->name);
+							printf("%s := %s + %s\n", tvar00, tvar00, exp->offset);
+							printf("%s := *%s\n", tvar00, tvar00);
+							memset(exp->name, 0, ID_MAX_LEN);
+							sprintf(exp->name, "%s", tvar00);
+							exp->dimension = 0;
+						}
+
 						printf("%s := &%s\n", tvar, exp->name);
 						char *tvar1 = getTempVar();
 						printf("%s := %s + #%d\n", tvar1, tvar, offset);

@@ -166,7 +166,7 @@ Item *newItem(){
 
 	result->dimension = -1;
 	result->dim_max = NULL;
-	result->offset = 0;
+	memset(result->offset, 0, ID_MAX_LEN*2);
 	result->next = NULL;
 
 	return result;
@@ -431,4 +431,22 @@ char *getTempVar(){
 	memset(name, 0, ID_MAX_LEN);
 	sprintf(name, "v%d", temp_var_num++);
 	return name;
+}
+void printExp(Item **exp){
+	if (NULL == exp) return;
+	else {
+		Item *e = *exp;
+		if (NULL == e) return;
+		else {
+			if (e->dimension > 0){
+				char *tvar = getTempVar();
+				printf("%s := &%s\n", tvar, e->name);
+				printf("%s := %s + %s\n", tvar, tvar, e->offset);
+				printf("%s := *%s\n", tvar, tvar);
+				memset(e->name, 0, ID_MAX_LEN);
+				sprintf(e->name, "%s", tvar);
+				e->dimension = 0;
+			}
+		}
+	}
 }

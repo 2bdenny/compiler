@@ -86,7 +86,7 @@ typedef struct item{
 
 	int dimension;
 	int *dim_max;
-	int offset;
+	char offset[ID_MAX_LEN*2];
 
 	struct item *next;
 }Item;
@@ -177,4 +177,7 @@ Item *getTempType();
 
 //生成临时变量名
 char *getTempVar();
+
+//万一是数组。。。妈蛋烦死了简直
+void printExp(Item **exp);
 #endif
