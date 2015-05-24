@@ -84,8 +84,14 @@ ExtDecList	: VarDec{
 			  Item *var = (Item *)$1;
 			  Item *tp = getTempType();
 			  int arr_num = getArrayNum(var);
-			  if (arr_num > 0) printf("DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
-			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
+			  if (arr_num > 0) {
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "DEC %s %d", var->name, getTypeSize(tp)*arr_num);
+			  }
+			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
+			  }
 		  }
 		| VarDec COMMA ExtDecList	{
 			$$ = $1;
@@ -95,8 +101,14 @@ ExtDecList	: VarDec{
 			Item *var = (Item *)$1;
 			Item *tp = getTempType();
 			int arr_num = getArrayNum(var);
-			if (arr_num > 0) printf("DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
-			else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
+			if (arr_num > 0) {
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
+			}
+			else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
+			}
 		  }
 		;
 
@@ -199,7 +211,6 @@ FunDec		: ID LP {
 			  $2 = (char *)newItem();
 			  ((Item *)$2)->scope = NULL;
 			  ((Item *)$2)->type = TYPE_FUNCTION;
-			  //printf("fun line=%d\n",
 			  ((Item *)$2)->line = ((Leaf *)$1)->line;
 			  if ($1 != NULL) cpy(((Item *)$2)->name, ((Leaf *)$1)->val.val_name);
 			  else printf("$1 is null\n");
@@ -207,11 +218,11 @@ FunDec		: ID LP {
 			  setScope((Item *)$2);
 
 			  // middle start
-			  printf("FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
+			  Midcode *code = newMidcode();
+			  sprintf(code->sentence, "FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
 		  } VarList RP{
 			  $$ = $2;
 			  setArgsNumber($2);
-			  //printf("FunDec id line = %d\n", ((Leaf *)$1)->line);
 			  ((Item *)$$)->line = ((Leaf *)$1)->line;
 			  setScope(NULL);
 		  }
@@ -227,7 +238,8 @@ FunDec		: ID LP {
 			insertTable((Item *)$$);
 
 			// middle start
-			printf("FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
 		  }
 		| error RP %prec FUN_ERR	{}
 		;
@@ -251,7 +263,8 @@ ParamDec	: Specifier VarDec {
 				  insertTable(item);
 
 				  //middle start
-				  printf("PARAM %s\n", item->name);
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "PARAM %s\n", item->name);
 			  }
 		  }
 		;
@@ -264,7 +277,6 @@ CompSt		: LC DefList StmtList RC{
 			  else {
 				  $$ = (char *)newItem();
 				  memcpy($$, $3, sizeof(Item));
-//				  printf("compst -> $$ result type = %d\n", ((Item *)$$)->result_type);
 			  }
 		  }
 		| error RC %prec COM_ERR	{}
@@ -284,7 +296,8 @@ Stmt		: Exp SEMI {
 			  Item *e1 = (Item *)$1;
 			  if (memcmp(e1->name, "CALL", 4) == 0){
 				  printExp(&e1);
-				  printf("%s\n", e1->name);
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "%s\n", e1->name);
 			  }
 		  }
 		| CompSt {$$ = $1;}
@@ -297,7 +310,8 @@ Stmt		: Exp SEMI {
 
 			// middle start
 			printExp(&t2);
-			printf("RETURN %s\n", t2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "RETURN %s\n", t2->name);
 		  }
 		| IF LP Exp RP {
 			Item *cond = (Item *)$3;
@@ -360,7 +374,6 @@ Def		: Specifier DecList SEMI {
 
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
-			  //printf("Def->Specifier DecList SEMI\n");
 			  //displayTable((Item *)$2);
 			  while (trace != NULL){
 				  if (item->type != -1) {
@@ -381,7 +394,6 @@ Def		: Specifier DecList SEMI {
 				  item->type = t1->type;
 				  cpy(item->type_name, t1->type_name);
 				  trace = trace->next;
-//				  printf("Def insert %s\n", item->name);
 				  insertTable(item);
 				  item = trace;
 			  }
@@ -407,8 +419,14 @@ Dec		: VarDec{
 				  Item *tp = getTempType();
 				  Item *var = (Item *)$1;
 				  int arr_num = getArrayNum(var);
-				  if (arr_num > 0) printf("DEC %s %d\n", var->name, arr_num*getTypeSize(tp));
-				  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
+				  if (arr_num > 0) {
+					  Midcode *code = newMidcode();
+					  sprintf(code->sentence, "DEC %s %d\n", var->name, arr_num*getTypeSize(tp));
+				  }
+				  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
+					  Midcode *code = newMidcode();
+					  sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
+				  }
 			  }
 		  }
 		| VarDec {
@@ -418,8 +436,14 @@ Dec		: VarDec{
 				Item *tp = getTempType();
 				Item *var = (Item *)$1;
 				int arr_num = getArrayNum(var);
-				if (arr_num > 0) printf("DEC %s %d\n", var->name, arr_num*getTypeSize(tp));
-				else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) printf("DEC %s %d\n", var->name, getTypeSize(tp));
+				if (arr_num > 0) {
+					Midcode *code = newMidcode();
+					sprintf(code->sentence, "DEC %s %d\n", var->name, arr_num*getTypeSize(tp));
+				}
+				else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
+					Midcode *code = newMidcode();
+					sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
+				}
 			}
 		  }ASSIGNOP Exp {
 			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT)){
@@ -441,7 +465,8 @@ Dec		: VarDec{
 			  Item *tp = getTempType();
 			  if (TYPE_VAR_INT == tp->type || TYPE_VAR_FLOAT == tp->type){
 				  printExp(&e2);
-				  printf("%s := %s\n", e1->name, e2->name);
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "%s := %s\n", e1->name, e2->name);
 			  }
 			  else if (TYPE_VAR_STRUCT == tp->type){
 				  printExp(&e2);
@@ -449,13 +474,18 @@ Dec		: VarDec{
 				  int i = 0;
 				  char *tvar1 = getTempVar();
 				  char *tvar2 = getTempVar();
-				  printf("%s := &%s\n", tvar1, e1->name);
-				  printf("%s := &%s\n", tvar2, e2->name);
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
+				  code = newMidcode();
+				  sprintf(code->sentence, "%s := &%s\n", tvar2, e2->name);
 				  for (; i < size; i += 4){
-					  printf("*%s := *%s\n", tvar1, tvar2);
+					  code = newMidcode();
+					  sprintf(code->sentence, "*%s := *%s\n", tvar1, tvar2);
 					  if (i+4 < size){
-						  printf("%s := %s + #4\n", tvar1, tvar1);
-						  printf("%s := %s + #4\n", tvar2, tvar2);
+						  code = newMidcode();
+						  sprintf(code->sentence, "%s := %s + #4\n", tvar1, tvar1);
+						  code = newMidcode();
+						  sprintf(code->sentence, "%s := %s + #4\n", tvar2, tvar2);
 					  }
 				  }
 			  }
@@ -474,13 +504,15 @@ Exp		: Exp ASSIGNOP Exp {
 					  // middle start
 					  printExp(&e1);
 					  printExp(&e2);
-					  printf("%s := %s\n", e1->name, e2->name);
+					  Midcode *code = newMidcode();
+					  sprintf(code->sentence, "%s := %s\n", e1->name, e2->name);
 				  }
 				  else if (TYPE_VAR_FLOAT == t1 && (TYPE_VAR_FLOAT == t2 || TYPE_FLOAT == t2)){
 					  // middle start
 					  printExp(&e1);
 					  printExp(&e2);
-					  printf("%s := %s\n", e1->name, e2->name);
+					  Midcode *code = newMidcode();
+					  sprintf(code->sentence, "%s := %s\n", e1->name, e2->name);
 				  }
 				  else if (TYPE_VAR_STRUCT == t1 && TYPE_VAR_STRUCT == t2){
 					  Item *s1 = getItem(((Item *)$1)->type_name);
@@ -497,13 +529,18 @@ Exp		: Exp ASSIGNOP Exp {
 						  int i = 0;
 						  char *tvar1 = getTempVar();
 						  char *tvar2 = getTempVar();
-						  printf("%s := &%s\n", tvar1, e1->name);
-						  printf("%s := &%s\n", tvar2, e2->name);
+						  Midcode *code = newMidcode();
+						  sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
+						  code = newMidcode();
+						  sprintf(code->sentence, "%s := &%s\n", tvar2, e2->name);
 						  for (; i < size; i += 4){
-							  printf("*%s := *%s\n", tvar1, tvar2);
+							  code = newMidcode();
+							  sprintf(code->sentence, "*%s := *%s\n", tvar1, tvar2);
 							  if (i+4 < size){
-								  printf("%s := %s + #4\n", tvar1, tvar1);
-								  printf("%s := %s + #4\n", tvar2, tvar2);
+								  code = newMidcode();
+								  sprintf(code->sentence, "%s := %s + #4\n", tvar1, tvar1);
+								  code = newMidcode();
+								  sprintf(code->sentence, "%s := %s + #4\n", tvar2, tvar2);
 							  }
 						  }
 					  }
@@ -534,7 +571,8 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e1);
 			printExp(&e2);
 			char *dollar = getTempVar();
-			printf("%s := %s && %s\n", dollar, e1->name, e2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := %s && %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }
@@ -555,7 +593,8 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e1);
 			printExp(&e2);
 			char *dollar = getTempVar();
-			printf("%s := %s || %s\n", dollar, e1->name, e2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := %s || %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }
@@ -576,7 +615,8 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e1);
 			printExp(&e2);
 			char *dollar = getTempVar();
-			printf("%s := %s %s %s\n", dollar, e1->name, ((Leaf *)$2)->val.val_name, e2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := %s %s %s\n", dollar, e1->name, ((Leaf *)$2)->val.val_name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }
@@ -600,7 +640,8 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e1);
 			printExp(&e2);
 			char *dollar = getTempVar();
-			printf("%s := %s + %s\n", dollar, e1->name, e2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := %s + %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }
@@ -624,7 +665,8 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e1);
 			printExp(&e2);
 			char *dollar = getTempVar();
-			printf("%s := %s - %s\n", dollar, e1->name, e2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := %s - %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }		
@@ -648,7 +690,8 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e1);
 			printExp(&e2);
 			char *dollar = getTempVar();
-			printf("%s := %s * %s\n", dollar, e1->name, e2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := %s * %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }		
@@ -672,7 +715,8 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e1);
 			printExp(&e2);
 			char *dollar = getTempVar();
-			printf("%s := %s * %s\n", dollar, e1->name, e2->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := %s * %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }		
@@ -694,7 +738,8 @@ Exp		: Exp ASSIGNOP Exp {
 			// middle start
 			printExp(&e1);
 			char *dollar = getTempVar();
-			printf("%s := #0 - %s\n", dollar, e1->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := #0 - %s\n", dollar, e1->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }
@@ -712,7 +757,8 @@ Exp		: Exp ASSIGNOP Exp {
 			// middle start
 			printExp(&e1);
 			char *dollar = getTempVar();
-			printf("%s := !%s\n", dollar, e1->name);
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "%s := !%s\n", dollar, e1->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 		  }
@@ -744,7 +790,8 @@ Exp		: Exp ASSIGNOP Exp {
 
 			  if (cmp(((Leaf *)$1)->val.val_name, "read") == 0) {
 				  char *tvar0 = getTempVar();
-				  printf("READ %s\n", tvar0);
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "READ %s\n", tvar0);
 				  memset(dollar->name, 0, ID_MAX_LEN);
 				  sprintf(dollar->name, "%s", tvar0);
 			  }
@@ -752,13 +799,15 @@ Exp		: Exp ASSIGNOP Exp {
 				  Item *trace = in_args;
 				  while (trace != NULL){
 					  printExp(&trace);
-					  printf("ARG %s\n", trace->name);
+					  Midcode *code = newMidcode();
+					  sprintf(code->sentence, "ARG %s\n", trace->name);
 					  trace = trace->next;
 				  }
 				  if (fun != NULL){
 					  if (cmp(fun->name, "write") == 0){
 						  dollar->type = TYPE_INT;
-						  printf("WRITE %s\n", in_args->name);
+						  Midcode *code = newMidcode();
+						  sprintf(code->sentence, "WRITE %s\n", in_args->name);
 						  memset(dollar->name, 0, ID_MAX_LEN);
 						  sprintf(dollar->name, "#0");
 					  }
@@ -793,29 +842,27 @@ Exp		: Exp ASSIGNOP Exp {
 						if (var->dimension == 1) {
 							if (var3->dimension > 0) {
 								char *tvar00 = getTempVar();
-								printf("%s := &%s\n", tvar00, var3->name);
-								printf("%s := %s + %s\n", tvar00, tvar00, var3->offset);
-								printf("%s := *%s\n", tvar00, tvar00);
+								Midcode *code = newMidcode();
+								sprintf(code->sentence, "%s := &%s\n", tvar00, var3->name);
+								code = newMidcode();
+								sprintf(code->sentence, "%s := %s + %s\n", tvar00, tvar00, var3->offset);
+								code = newMidcode();
+								sprintf(code->sentence, "%s := *%s\n", tvar00, tvar00);
 								memset(var3->name, 0, ID_MAX_LEN);
 								sprintf(var3->name, "%s", tvar00);
 								var3->dimension = 0;
 							}
-							printf("%s := %s * #%d\n", tvar0, var3->name, dim_step);
+							Midcode *code = newMidcode();
+							sprintf(code->sentence, "%s := %s * #%d\n", tvar0, var3->name, dim_step);
 							sprintf(var->offset, "%s", tvar0);
 						}
 						else {
-							if (var3->dimension > 0) {
-								char *tvar00 = getTempVar();
-								printf("%s := &%s\n", tvar00, var3->name);
-								printf("%s := %s + %s\n", tvar00, tvar00, var3->offset);
-								printf("%s := *%s\n", tvar00, tvar00);
-								memset(var3->name, 0, ID_MAX_LEN);
-								sprintf(var3->name, "%s", tvar00);
-								var3->dimension = 0;
-							}
-							printf("%s := %s * #%d\n", tvar0, var3->name, dim_step);
+							printExp(&var3);
+							Midcode *code = newMidcode();
+							sprintf(code->sentence, "%s := %s * #%d\n", tvar0, var3->name, dim_step);
 							char *tvar1 = getTempVar();
-							printf("%s := %s + %s\n", tvar1, tvar0, var->offset);
+							code = newMidcode();
+							sprintf(code->sentence, "%s := %s + %s\n", tvar1, tvar0, var->offset);
 							memset(var->offset, 0, 2*ID_MAX_LEN);
 							sprintf(var->offset, "%s", tvar1);
 						}
@@ -863,21 +910,15 @@ Exp		: Exp ASSIGNOP Exp {
 						assert(NULL != exp);
 
 						// array cond
-						if (exp->dimension > 0) {
-							char *tvar00 = getTempVar();
-							printf("%s := &%s\n", tvar00, exp->name);
-							printf("%s := %s + %s\n", tvar00, tvar00, exp->offset);
-							printf("%s := *%s\n", tvar00, tvar00);
-							memset(exp->name, 0, ID_MAX_LEN);
-							sprintf(exp->name, "%s", tvar00);
-							exp->dimension = 0;
-						}
-
-						printf("%s := &%s\n", tvar, exp->name);
+						printExp(&exp);
+						Midcode *code = newMidcode();
+						sprintf(code->sentence, "%s := &%s\n", tvar, exp->name);
 						char *tvar1 = getTempVar();
-						printf("%s := %s + #%d\n", tvar1, tvar, offset);
+						code = newMidcode();
+						sprintf(code->sentence, "%s := %s + #%d\n", tvar1, tvar, offset);
 						char *tvar2 = getTempVar();
-						printf("%s := *%s\n", tvar2, tvar1);
+						code = newMidcode();
+						sprintf(code->sentence, "%s := *%s\n", tvar2, tvar1);
 						cpy(dollar->name, tvar2);
 					}
 

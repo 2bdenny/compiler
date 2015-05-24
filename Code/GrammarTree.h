@@ -66,6 +66,25 @@ struct fNode{
 };
 typedef struct fNode Tree;
 
+// 下面的函数都是用于处理跳转相关语句的
+// 为了保存行号，先把所有代码放在内存里，使用列表存起来【虽然比较慢
+// 本来是直接输出到文件的，后来觉得文件操作太麻烦请教了余子洵，然后get了这个方法
+
+#define SENTENCE_MAX_LEN 100
+
+// 中间代码一条语句的结构体
+typedef struct midcode {
+	int line;		//行号
+	char sentence[SENTENCE_MAX_LEN];	//中间代码
+	struct midcode *next;	//下一条语句
+} Midcode;
+// 每一条语句都保证唯一，绝对不会有一条语句的多个副本，因此都是指针操作【好深的坑
+
+// 这个结构体用于保存truelist和falselist
+typedef struct codeitem{
+	Midcode *code;		//中间代码的地址
+	struct codeitem *next;	//下一个list的节点
+} codeItem;
 // 符号表项
 typedef struct item{
 	struct item *scope;
@@ -88,8 +107,12 @@ typedef struct item{
 	int *dim_max;
 	char offset[ID_MAX_LEN*2];
 
+	codeItem *truelist;
+	codeItem *falselist;
+
 	struct item *next;
 }Item;
+
 
 // 制造一个叶子
 Leaf *makeLeaf(int line, int valno, int terminal, char *token, Value val);
@@ -183,4 +206,34 @@ void printExp(Item **exp);
 
 //初始化，read和write
 void initTable();
+
+
+// 这个函数生成一条中间代码的空间，同时保证行号唯一
+Midcode *newMidcode();
+
+// 这个函数生成一个list项
+codeItem *newcodeItem();
+
+// 设置M标记, m标记为LABEL语句后面的标记名
+void setM(char *m);
+
+// 获取M标记
+char *getM();
+
+// 这个函数merge一个待填充的列表和一条新的待填充的语句
+void mergeTrueList(Midcode *st);
+void mergeFalseList(Midcode *st);
+
+// 这个函数回填一个列表,链表中需要回填的地方都用标记为符号 @ ，所以回填的时候只需要替换这个单词为label就可以了
+void backpatchTrueList(char *tag);
+void backpatchFalseList(char *tag);
+
+// 这个函数生成一个标记名字，标记的名字格式 L_0
+char *newTagName();
+
+// 这个函数把一句中间代码用sprintf打印到中间代码列表里。
+void printMidcode(char *pattern, ...);
+
+// 保存所有中间代码到文件中
+void storeMidcode();
 #endif

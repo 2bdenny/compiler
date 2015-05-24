@@ -1,6 +1,8 @@
 #include "GrammarTree.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
+
 Item *table = NULL;
 Item *tail = NULL;
 Item *scope = NULL;
@@ -19,14 +21,11 @@ Leaf *makeLeaf(int line, int valno, int terminal, char *token, Value val){
 	x->val = val;
 	x->left = NULL;
 	x->right = NULL;
-//	printf("Leaf %ld\n", (long)x);
 	return x;
 }
 
 // 限制：对于一个表达式，规约的时候，必须从左到右地增加child
 int addChild(Leaf *parent, Leaf *child){
-//	printf("parent %ld; left %ld; right %ld\n", (long)parent, (long)parent->left, (long)parent->right);
-
 	if (parent->left == NULL) {
 		parent->left = child;
 		return true;
@@ -66,8 +65,6 @@ void display(Leaf *tree, int ntab){
 
 // 在森林中增加一棵树
 int addTree(Leaf *tree){
-//	treeCount ++;
-//	printf("add tree %ld\n", (long)forest);
 	if (forest == NULL) {
 		forest = (Tree *)malloc(TREE_LEN);
 		forest->tree = tree;
@@ -85,7 +82,6 @@ int addTree(Leaf *tree){
 }
 // 删除一棵树
 int delTree(Leaf *tree){
-//	printf("del tree %s\n", tree->token);
 	Tree *prev = NULL;
 	Tree *tmp = forest;
 	if (tmp == NULL) return false;
@@ -122,7 +118,6 @@ void meetError(){
 void destroy(Leaf **tree){
 	Leaf *tmp = *tree;
 	if (tmp == NULL) return;
-	//display(*tree, 0);
 	if (tmp->left != NULL) destroy(&(tmp->left));
 	if (tmp->right != NULL) destroy(&(tmp->right));
 	free(tmp);
@@ -169,6 +164,8 @@ Item *newItem(){
 	memset(result->offset, 0, ID_MAX_LEN*2);
 	result->next = NULL;
 
+	result->truelist = NULL;
+	result->falselist = NULL;
 	return result;
 }
 void insertTable(Item *x){
@@ -185,20 +182,14 @@ void insertTable(Item *x){
 			printf("Error type 3 at Line %d: var %s name has been used\n", x->line, x->name);
 			return;
 		}
-//		printf("insert %s now\n", x->name);
 		x->next = NULL;
 		if (table == NULL) {
 			table = x;
 			tail = x;
 		}
 		else {
-//				printf("tail=%lx\n", tail);
 			tail->next = x;
 			tail = x;
-//			if (cmp(x->name, "temp") == 0) {
-//				printf("tail=%lx\n", tail);
-//				displayTable(table);
-//			}
 		}
 	}
 //	displayTable(table);
@@ -289,7 +280,6 @@ Item *getArgs(char *name){
 	if (fun != NULL && fun->type == TYPE_FUNCTION){
 		// 参数总数
 		int total = fun->args_num;
-//		printf("total=%d\n", total);
 		Item *trace = table;
 		while (trace != NULL && total > 0){
 			// 前total个作用域是fun的变量就是函数的参数列表
@@ -314,17 +304,10 @@ Item *getArgs(char *name){
 		}
 		if (total > 0) printf("Error occur in get args\n");
 	}
-//	printf("函数的参数列表是:\n");
 //	displayTable(table);
 	return result;
 }
 bool cmpArgs(Item *def, Item *in){
-//	printf("------start cmp args------\n");
-//	printf("------def is------\n");
-//	displayTable(def);
-//	printf("------in is------\n");
-//	displayTable(in);
-//	printf("--------------------------\n");
 	while (def != NULL && in != NULL){
 		// 参数类型不匹配
 		if (!cmpItem(def, in)) return false;
@@ -440,9 +423,12 @@ void printExp(Item **exp){
 		else {
 			if (e->dimension > 0){
 				char *tvar = getTempVar();
-				printf("%s := &%s\n", tvar, e->name);
-				printf("%s := %s + %s\n", tvar, tvar, e->offset);
-				printf("%s := *%s\n", tvar, tvar);
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "%s := &%s\n", tvar, e->name);
+				code = newMidcode();
+				sprintf(code->sentence, "%s := %s + %s\n", tvar, tvar, e->offset);
+				code = newMidcode();
+				sprintf(code->sentence, "%s := *%s\n", tvar, tvar);
 				memset(e->name, 0, ID_MAX_LEN);
 				sprintf(e->name, "%s", tvar);
 				e->dimension = 0;
@@ -477,4 +463,118 @@ void initTable(){
 	arg->dimension = 0;
 
 	insertTable(arg);
+}
+
+// 最后写入的文件的问价指针
+FILE *file = NULL;
+
+// 行号
+int line_num = 0;
+
+// 所有的中间代码保存这个链表里 
+Midcode *codes = NULL;
+Midcode *code_tail = NULL;
+
+// label的number不会重复
+int tag_num = 0;
+
+Midcode *newMidcode(){
+	Midcode *code = (Midcode *)malloc(sizeof(Midcode));
+	code->line = line_num ++;
+	memset(code->sentence, 0, SENTENCE_MAX_LEN);
+	code->next = NULL;
+
+	if (codes == NULL) {
+		codes = code;
+		code_tail = code;
+	}
+	else {
+		code_tail->next = code;
+		code_tail = code;
+	}
+
+	return code;
+}
+
+codeItem *newcodeItem(){
+	codeItem *item = (codeItem *)malloc(sizeof(codeItem));
+	item->code = NULL;
+	item->next = NULL;
+	return item;
+}
+
+// 当前的M标号，存储的应该是LABEL M语句的M的名字
+char *tagM = NULL;
+void setM(char *m){
+	if (tagM == NULL) tagM = (char *)malloc(ID_MAX_LEN);
+	memset(tagM, 0, ID_MAX_LEN);
+	sprintf(tagM, "%s", m);
+}
+char *getM(){
+	return tagM;
+}
+
+void mergeList(codeItem **list, Midcode *st){
+	codeItem *l = *list;
+	if (l == NULL) {
+		l = newcodeItem();
+		l->code = st;
+	}
+	else{
+		codeItem *item = newcodeItem();
+		item->code = st;
+		item->next = l;
+		l = item;
+	}
+}
+
+void replaceLabel(char *origin, char *label){
+	int maxlen = strlen(origin);
+	int i;
+	for (i = 0; i < maxlen; i ++){
+		if (origin[i] == '@') break;
+	}
+	if (i == maxlen) {
+		printf("Error occurred in replace\n");
+		return;
+	}
+	memset(origin+i, 0, SENTENCE_MAX_LEN-i);
+	sprintf(origin+i, "%s", label);
+}
+
+void backpatchList(codeItem *list, char *tag){
+	codeItem *trace = list;
+	while (NULL != trace){
+		replaceLabel(trace->code->sentence, tag);
+		trace = trace->next;
+	}
+}
+
+char *newTagName(){
+	char *name = (char *)malloc(ID_MAX_LEN);
+	memset(name, 0, ID_MAX_LEN);
+	sprintf(name, "L_%d", tag_num++);
+	return name;
+}
+
+void diplayMidcode(){
+	Midcode *trace = codes;
+	while (NULL != trace){
+		printf("%s\n", trace->sentence);
+		trace = trace->next;
+	}
+}
+
+void storeMidcode(){
+	file = fopen("./midcode.ir", "w+");
+	if (NULL == file){
+		printf("Error occurred in open file\n");
+		return;
+	}
+	Midcode *trace = codes;
+	while (NULL != trace){
+		fprintf(file, "%s\n", trace->sentence);
+		trace = trace->next;
+	}
+	fclose(file);
 }
