@@ -333,20 +333,8 @@ Stmt		: Exp SEMI {
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "RETURN %s\n", t2->name);
 		  }
-		| IF LP Exp RP {
-			// middle goto
-			char *label = newTagName();
-			setM(label);
-
+		| IF LP Exp RP M Stmt %prec LOWER_THAN_ELSE {
 			Item *cond = (Item *)$3;
-			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
-				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
-
-			Item *tmp = newItem();
-			tmp->line = ((Leaf *)$1)->line;
-			tmp->type = TYPE_IF;
-			insertTable(tmp);
-			setScope(tmp);
 
 			// middle goto
 			if (cond->truelist == NULL && cond->falselist == NULL){
@@ -357,67 +345,51 @@ Stmt		: Exp SEMI {
 				sprintf(code->sentence, "GOTO @\n");
 				cond->falselist = mergeNode(cond->falselist, code);
 			}
-			backpatchList(cond->truelist, getM());
-		  }Stmt %prec LOWER_THAN_ELSE {
-			if (getScope() != NULL) setScope(getScope()->scope);
-			else setScope(NULL);
+			Item *m = (Item *)$5;
+			backpatchList(cond->truelist, m->name);
 
 			// middle goto
 			Item *dollar = newItem();
-			Item *cond = (Item *)$3;
 			Item *st = (Item *)$6;
 			dollar->nextlist = mergeList(dollar->nextlist, cond->falselist);
 			dollar->nextlist = mergeList(dollar->nextlist, st->nextlist);
 
 			$$ = (char *)dollar;
 		  }
-		| IF LP Exp RP {
-			Item *cond = (Item *)$3;
-			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
-				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
-			Item *tmp = newItem();
-			tmp->line = ((Leaf *)$1)->line;
-			tmp->type = TYPE_IF;
-			insertTable(tmp);
-			setScope(tmp);
-
-			// middle goto
-			char *label = newTagName();
-			setM(label);
-			backpatchList(cond->truelist, getM());
-		  }Stmt {
-			if (getScope() != NULL) setScope(getScope()->scope);
-			else setScope(NULL);
-
-			// middle code
-			Midcode *n = newMidcode();
-			sprintf(n->sentence, "GOTO @\n");
-			$4 = (char *)n;
-		  }ELSE {
-			Item *tmp = newItem();
-			tmp->line = ((Leaf *)$8)->line;
-			tmp->type = TYPE_ELSE;
-			insertTable(tmp);
-			setScope(tmp);
-
+		| IF LP Exp RP M Stmt ELSE {
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "GOTO @\n");
+			Item *dollar = newItem();
+			dollar->nextlist = mergeNode(dollar->nextlist, code);
+			$7 = (char *)dollar;
+		  } M Stmt{
 			// middle goto
 			Item *cond = (Item *)$3;
-			Item *st = (Item *)$6;
-			char *label = newTagName();
-			setM(label);
-			backpatchList(cond->falselist, getM());
-		  }Stmt{
-			if (getScope() != NULL) setScope(getScope()->scope);
-			else setScope(NULL);
+			if (cond->truelist == NULL && cond->falselist == NULL){
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "IF %s != #0 GOTO @\n", cond->name);
+				cond->truelist = mergeNode(cond->truelist, code);
+				code = newMidcode();
+				sprintf(code->sentence, "GOTO @\n");
+				cond->falselist = mergeNode(cond->falselist, code);
+			}
+
+			Item *m1 = (Item *)$5;
+			Item *m2 = (Item *)$9;
+			backpatchList(cond->truelist, m1->name);
+			backpatchList(cond->falselist, m2->name);
 
 			// middle goto
 			Item *s1 = (Item *)$6;
 			Item *s2 = (Item *)$10;
+			Item *n = (Item *)$7;
+
 			Item *dollar = newItem();
-			Midcode *n = (Midcode *)$4;
-			s1->nextlist = mergeNode(s1->nextlist, n);
+			s1->nextlist = mergeList(s1->nextlist, n->nextlist);
 			dollar->nextlist = mergeList(dollar->nextlist, s1->nextlist);
 			dollar->nextlist = mergeList(dollar->nextlist, s2->nextlist);
+
+			$$ = (char *)dollar;
 		  }
 		| WHILE LP {
 			// middle goto
@@ -456,6 +428,17 @@ Stmt		: Exp SEMI {
 			$$ = (char *)dollar;
 		  }
 		| error SEMI %prec STM_ERR	{}
+		;
+
+M		: /**/ {
+			       char *label = newTagName();
+			       Midcode *code = newMidcode();
+			       sprintf(code->sentence, "LABEL %s :\n", label);
+			       Item *dollar = newItem();
+			       dollar->nextlist = mergeNode(dollar->nextlist, code);
+			       sprintf(dollar->name, "%s", label);
+			       $$ = (char *)dollar;
+		       }
 		;
 
 DefList		: Def DefList			{}

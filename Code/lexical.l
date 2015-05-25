@@ -65,7 +65,7 @@ while	{ plantKEY("WHILE"); return WHILE;}
 "<"	{ plantRELOP(); return RELOP;}
 "<="	{ plantRELOP(); return RELOP;}
 "=="	{ plantRELOP(); return RELOP;}
-"<>"	{ plantRELOP(); return RELOP;}
+"!="	{ plantRELOP(); return RELOP;}
 ">"	{ plantRELOP(); return RELOP;}
 ">="	{ plantRELOP(); return RELOP;}
 .	{ printf("Error type A at Line %d: Mysterious Character \"%s\"\n", yylineno, yytext); meetError();}
