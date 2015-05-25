@@ -86,7 +86,7 @@ ExtDecList	: VarDec{
 			  int arr_num = getArrayNum(var);
 			  if (arr_num > 0) {
 				  Midcode *code = newMidcode();
-				  sprintf(code->sentence, "DEC %s %d", var->name, getTypeSize(tp)*arr_num);
+				  sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
 			  }
 			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
 				  Midcode *code = newMidcode();

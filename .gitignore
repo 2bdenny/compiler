@@ -44,3 +44,5 @@ scanner
 */tags
 Code/tags
 ./Code/tags
+Code/*.ir
+*.ir

@@ -557,10 +557,10 @@ char *newTagName(){
 	return name;
 }
 
-void diplayMidcode(){
+void displayMidcode(){
 	Midcode *trace = codes;
 	while (NULL != trace){
-		printf("%s\n", trace->sentence);
+		printf("%s", trace->sentence);
 		trace = trace->next;
 	}
 }
@@ -573,7 +573,7 @@ void storeMidcode(){
 	}
 	Midcode *trace = codes;
 	while (NULL != trace){
-		fprintf(file, "%s\n", trace->sentence);
+		fprintf(file, "%s", trace->sentence);
 		trace = trace->next;
 	}
 	fclose(file);

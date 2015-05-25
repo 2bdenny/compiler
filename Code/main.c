@@ -23,8 +23,9 @@ int main(int argc, char *argv[]){
 		fclose(f);
 //		display(forest->tree, 0);
 //		analyse(forest->tree);
-//		printf("\n\n\n\n\n\n");
-		displayTable(table);
+//		displayTable(table);
+		displayMidcode();
+		storeMidcode();
 
 //		analyse(forest->tree);
 		destroyForest();

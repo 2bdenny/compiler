@@ -42,3 +42,4 @@ clean:
 	rm -f *.o
 	rm -f *~
 	rm -f *.txt
+	rm -f *.ir

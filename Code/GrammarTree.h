@@ -231,8 +231,8 @@ void backpatchFalseList(char *tag);
 // 这个函数生成一个标记名字，标记的名字格式 L_0
 char *newTagName();
 
-// 这个函数把一句中间代码用sprintf打印到中间代码列表里。
-void printMidcode(char *pattern, ...);
+// 打印中间代码到屏幕
+void displayMidcode();
 
 // 保存所有中间代码到文件中
 void storeMidcode();
