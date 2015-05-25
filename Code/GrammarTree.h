@@ -109,6 +109,7 @@ typedef struct item{
 
 	codeItem *truelist;
 	codeItem *falselist;
+	codeItem *nextlist;
 
 	struct item *next;
 }Item;
@@ -220,13 +221,17 @@ void setM(char *m);
 // 获取M标记
 char *getM();
 
-// 这个函数merge一个待填充的列表和一条新的待填充的语句
-void mergeTrueList(Midcode *st);
-void mergeFalseList(Midcode *st);
+// 这个函数merge两个列表到一个列表里
+codeItem *mergeList(codeItem *list1, codeItem *list2);
+
+// 这个函数merge一个列表和一条新待填充的语句
+codeItem *mergeNode(codeItem *list, Midcode *st);
+
+// 这个函数做字符串替换
+void replaceLabel(char *origin, char *label);
 
 // 这个函数回填一个列表,链表中需要回填的地方都用标记为符号 @ ，所以回填的时候只需要替换这个单词为label就可以了
-void backpatchTrueList(char *tag);
-void backpatchFalseList(char *tag);
+void backpatchList(codeItem *list, char *tag);
 
 // 这个函数生成一个标记名字，标记的名字格式 L_0
 char *newTagName();
@@ -236,4 +241,8 @@ void displayMidcode();
 
 // 保存所有中间代码到文件中
 void storeMidcode();
+
+// 待填充列表
+void displaycodeItem(codeItem *list);
+void displayItemList(Item *it);
 #endif

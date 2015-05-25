@@ -81,7 +81,7 @@ ExtDecList	: VarDec{
 			  $$ = $1;
 
 			  // middle start
-			  Item *var = (Item *)$1;
+			 /* Item *var = (Item *)$1;
 			  Item *tp = getTempType();
 			  int arr_num = getArrayNum(var);
 			  if (arr_num > 0) {
@@ -91,14 +91,14 @@ ExtDecList	: VarDec{
 			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
 				  Midcode *code = newMidcode();
 				  sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
-			  }
+			  }*/
 		  }
 		| VarDec COMMA ExtDecList	{
 			$$ = $1;
 			((Item *)$$)->next = (Item *)$3;
 
 			// middle start
-			Item *var = (Item *)$1;
+/*			Item *var = (Item *)$1;
 			Item *tp = getTempType();
 			int arr_num = getArrayNum(var);
 			if (arr_num > 0) {
@@ -108,7 +108,7 @@ ExtDecList	: VarDec{
 			else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
 				Midcode *code = newMidcode();
 				sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
-			}
+			}*/
 		  }
 		;
 
@@ -248,9 +248,17 @@ VarList		: ParamDec COMMA VarList {
 			  // 参数列表定义
 			  ((Item *)$1)->next = (Item *)$3;
 			  $$ = $1;
+			  // middle start
+			  Item *para = (Item *)$1;
+			  Midcode *code = newMidcode();
+			  sprintf(code->sentence, "PARAM %s\n", para->name);
 		  }
 		| ParamDec {
 			$$ = $1;
+			// middle start
+			Item *para = (Item *)$1;
+			Midcode *code = newMidcode();
+			sprintf(code->sentence, "PARAM %s\n", para->name);
 		 }
 		;
 
@@ -262,9 +270,15 @@ ParamDec	: Specifier VarDec {
 				  cpy(item->type_name, ((Item *)$1)->type_name);
 				  insertTable(item);
 
-				  //middle start
+				  Item *dollar = newItem();
+				  memcpy(dollar, $2, sizeof(Item));
+				  dollar->next = NULL;
+				  dollar->dim_max = NULL;
+				  $$ = (char *)dollar;
+/*				  //middle start
 				  Midcode *code = newMidcode();
-				  sprintf(code->sentence, "PARAM %s\n", item->name);
+				  sprintf(code->sentence, "PARAM %s\n", trace->name);
+				  trace = trace->next;*/
 			  }
 		  }
 		;
@@ -282,11 +296,16 @@ CompSt		: LC DefList StmtList RC{
 		| error RC %prec COM_ERR	{}
 		;
 
-StmtList	: Stmt StmtList {
-			  if ($2 == NULL) $$ = $1;
-			  else $$ = $2;
+StmtList	: Stmt {
+			  // middle goto
+			  char *label = newTagName();
+			  setM(label);
+			  Item *st = (Item *)$1;
+			  backpatchList(st->nextlist, getM());
+		  } StmtList {
+			  $$ = $3;
 		  }
-		| /* empty */ { $$ = NULL; }
+		| /* empty */ { $$ = (char *)newItem(); }
 		;
 
 Stmt		: Exp SEMI {
@@ -296,8 +315,9 @@ Stmt		: Exp SEMI {
 			  Item *e1 = (Item *)$1;
 			  if (memcmp(e1->name, "CALL", 4) == 0){
 				  printExp(&e1);
+				  char *tvar = getTempVar();
 				  Midcode *code = newMidcode();
-				  sprintf(code->sentence, "%s\n", e1->name);
+				  sprintf(code->sentence, "%s := %s\n", tvar, e1->name);
 			  }
 		  }
 		| CompSt {$$ = $1;}
@@ -314,6 +334,10 @@ Stmt		: Exp SEMI {
 			sprintf(code->sentence, "RETURN %s\n", t2->name);
 		  }
 		| IF LP Exp RP {
+			// middle goto
+			char *label = newTagName();
+			setM(label);
+
 			Item *cond = (Item *)$3;
 			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
 				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
@@ -323,9 +347,29 @@ Stmt		: Exp SEMI {
 			tmp->type = TYPE_IF;
 			insertTable(tmp);
 			setScope(tmp);
+
+			// middle goto
+			if (cond->truelist == NULL && cond->falselist == NULL){
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "IF %s != #0 GOTO @\n", cond->name);
+				cond->truelist = mergeNode(cond->truelist, code);
+				code = newMidcode();
+				sprintf(code->sentence, "GOTO @\n");
+				cond->falselist = mergeNode(cond->falselist, code);
+			}
+			backpatchList(cond->truelist, getM());
 		  }Stmt %prec LOWER_THAN_ELSE {
 			if (getScope() != NULL) setScope(getScope()->scope);
 			else setScope(NULL);
+
+			// middle goto
+			Item *dollar = newItem();
+			Item *cond = (Item *)$3;
+			Item *st = (Item *)$6;
+			dollar->nextlist = mergeList(dollar->nextlist, cond->falselist);
+			dollar->nextlist = mergeList(dollar->nextlist, st->nextlist);
+
+			$$ = (char *)dollar;
 		  }
 		| IF LP Exp RP {
 			Item *cond = (Item *)$3;
@@ -336,21 +380,53 @@ Stmt		: Exp SEMI {
 			tmp->type = TYPE_IF;
 			insertTable(tmp);
 			setScope(tmp);
+
+			// middle goto
+			char *label = newTagName();
+			setM(label);
+			backpatchList(cond->truelist, getM());
 		  }Stmt {
 			if (getScope() != NULL) setScope(getScope()->scope);
 			else setScope(NULL);
+
+			// middle code
+			Midcode *n = newMidcode();
+			sprintf(n->sentence, "GOTO @\n");
+			$4 = (char *)n;
 		  }ELSE {
 			Item *tmp = newItem();
-			tmp->line = ((Leaf *)$6)->line;
+			tmp->line = ((Leaf *)$8)->line;
 			tmp->type = TYPE_ELSE;
 			insertTable(tmp);
 			setScope(tmp);
+
+			// middle goto
+			Item *cond = (Item *)$3;
+			Item *st = (Item *)$6;
+			char *label = newTagName();
+			setM(label);
+			backpatchList(cond->falselist, getM());
 		  }Stmt{
 			if (getScope() != NULL) setScope(getScope()->scope);
 			else setScope(NULL);
+
+			// middle goto
+			Item *s1 = (Item *)$6;
+			Item *s2 = (Item *)$10;
+			Item *dollar = newItem();
+			Midcode *n = (Midcode *)$4;
+			s1->nextlist = mergeNode(s1->nextlist, n);
+			dollar->nextlist = mergeList(dollar->nextlist, s1->nextlist);
+			dollar->nextlist = mergeList(dollar->nextlist, s2->nextlist);
 		  }
-		| WHILE LP Exp RP{
-			Item *cond = (Item *)$3;
+		| WHILE LP {
+			// middle goto
+			char *label = newTagName();
+			Midcode *m1 = newMidcode();
+			sprintf(m1->sentence, "LABEL %s :\n", label);
+			$2 = label;
+		  } Exp RP{
+			Item *cond = (Item *)$4;
 			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
 				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
 			Item *tmp = newItem();
@@ -358,9 +434,26 @@ Stmt		: Exp SEMI {
 			tmp->type = TYPE_WHILE;
 			insertTable(tmp);
 			setScope(tmp);
+
+			// middle goto
+			char *label = newTagName();
+			setM(label);
+			backpatchList(cond->truelist, getM());
+
 		  }Stmt{
 			if (getScope() != NULL) setScope(getScope()->scope);
 			else setScope(NULL);
+
+			// middle goto
+			Midcode *loop = newMidcode();
+			sprintf(loop->sentence, "GOTO %s\n", $2);
+			Item *st = (Item *)$7;
+			backpatchList(st->nextlist, $2);
+
+			Item *cond = (Item *)$4;
+			Item *dollar = newItem();
+			dollar->nextlist = cond->falselist;
+			$$ = (char *)dollar;
 		  }
 		| error SEMI %prec STM_ERR	{}
 		;
@@ -465,6 +558,13 @@ Dec		: VarDec{
 			  Item *tp = getTempType();
 			  if (TYPE_VAR_INT == tp->type || TYPE_VAR_FLOAT == tp->type){
 				  printExp(&e2);
+				  if (memcmp(e2->name, "CALL", 4) == 0) {
+					  char *tvar1 = getTempVar();
+					  Midcode *c = newMidcode();
+					  sprintf(c->sentence, "%s := %s\n", tvar1, e2->name);
+					  memset(e2->name, 0, ID_MAX_LEN);
+					  sprintf(e2->name, "%s", tvar1);
+				  }
 				  Midcode *code = newMidcode();
 				  sprintf(code->sentence, "%s := %s\n", e1->name, e2->name);
 			  }
@@ -504,6 +604,13 @@ Exp		: Exp ASSIGNOP Exp {
 					  // middle start
 					  printExp(&e1);
 					  printExp(&e2);
+					  if (memcmp(e2->name, "CALL", 4) == 0) {
+						  char *tvar1 = getTempVar();
+						  Midcode *c = newMidcode();
+						  sprintf(c->sentence, "%s := %s\n", tvar1, e2->name);
+						  memset(e2->name, 0, ID_MAX_LEN);
+						  sprintf(e2->name, "%s", tvar1);
+					  }
 					  Midcode *code = newMidcode();
 					  sprintf(code->sentence, "%s := %s\n", e1->name, e2->name);
 				  }
@@ -511,6 +618,13 @@ Exp		: Exp ASSIGNOP Exp {
 					  // middle start
 					  printExp(&e1);
 					  printExp(&e2);
+					  if (memcmp(e2->name, "CALL", 4) == 0) {
+						  char *tvar1 = getTempVar();
+						  Midcode *c = newMidcode();
+						  sprintf(c->sentence, "%s := %s\n", tvar1, e2->name);
+						  memset(e2->name, 0, ID_MAX_LEN);
+						  sprintf(e2->name, "%s", tvar1);
+					  }
 					  Midcode *code = newMidcode();
 					  sprintf(code->sentence, "%s := %s\n", e1->name, e2->name);
 				  }
@@ -554,9 +668,13 @@ Exp		: Exp ASSIGNOP Exp {
 				  $$ = (char *)e1;
 			  }
 		  }
-		| Exp AND Exp {
+		| Exp AND {
+			// middle goto
+			char *label = newTagName();
+			setM(label);
+		  } Exp {
 			Item *e1 = (Item *)$1;
-			Item *e2 = (Item *)$3;
+			Item *e2 = (Item *)$4;
 			int t1 = e1->type;
 			int t2 = e2->type;
 			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
@@ -567,6 +685,14 @@ Exp		: Exp ASSIGNOP Exp {
 				e1->type = TYPE_INT;
 			}
 
+/*			printf("before merge and backpatch\n");
+			printf("e1:%lx e2:%lx\n", e1, e2);
+			displayItemList(e1);
+			displayItemList(e2);*/
+
+			// middle goto
+			backpatchList(e1->truelist, getM());
+
 			//middle start
 			printExp(&e1);
 			printExp(&e2);
@@ -574,11 +700,22 @@ Exp		: Exp ASSIGNOP Exp {
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "%s := %s && %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
+
+			// middle goto
+			e1->truelist = e2->truelist;
+			e1->falselist = mergeList(e1->falselist, e2->falselist);
 			$$ = (char *)e1;
+/*			printf("after");
+			displayItemList(e1);*/
+
+//			printf("AND $1:%lx, $2:%lx, $3:%lx, $4:%lx\n", $1, $2, $3, $4);
 		  }
-		| Exp OR Exp {
+		| Exp OR {
+			char *label = newTagName();
+			setM(label);
+		  } Exp {
 			Item *e1 = (Item *)$1;
-			Item *e2 = (Item *)$3;
+			Item *e2 = (Item *)$4;
 			int t1 = e1->type;
 			int t2 = e2->type;
 			if ((TYPE_INT == t1 || TYPE_VAR_INT == t1) && (TYPE_INT == t2 || TYPE_VAR_INT == t2)){
@@ -596,6 +733,12 @@ Exp		: Exp ASSIGNOP Exp {
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "%s := %s || %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
+
+			// middle goto
+			backpatchList(e1->falselist, getM());
+			e1->truelist = mergeList(e1->truelist, e2->truelist);
+			e1->falselist = e2->falselist;
+
 			$$ = (char *)e1;
 		  }
 		| Exp RELOP Exp {
@@ -612,13 +755,19 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			//middle start
+			// middle goto
 			printExp(&e1);
 			printExp(&e2);
-			char *dollar = getTempVar();
 			Midcode *code = newMidcode();
-			sprintf(code->sentence, "%s := %s %s %s\n", dollar, e1->name, ((Leaf *)$2)->val.val_name, e2->name);
-			cpy(e1->name, dollar);
+			sprintf(code->sentence, "IF %s %s %s GOTO @\n", e1->name, ((Leaf *)$2)->val.val_name, e2->name);
+			e1->truelist = mergeNode(e1->truelist, code);
+			code = newMidcode();
+			sprintf(code->sentence, "GOTO @\n");
+			e1->falselist = mergeNode(e1->falselist, code);
 			$$ = (char *)e1;
+
+/*			printf("relop\n");
+			printf("$$:%lx\n", $$);*/
 		  }
 		| Exp PLUS Exp {
 			Item *e1 = (Item *)$1;
@@ -755,7 +904,13 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 
 			// middle start
+			// middle goto
 			printExp(&e1);
+			codeItem *tl = e1->truelist;
+			codeItem *fl = e1->falselist;
+			e1->truelist = fl;
+			e1->falselist = tl;
+
 			char *dollar = getTempVar();
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "%s := !%s\n", dollar, e1->name);
@@ -977,7 +1132,7 @@ Args		: Exp COMMA Args {
 			$$ = $1;
 			((Item *)$$)->next = NULL;
 		//	printf("Args->Exp: %lx->%lx\n", $$, NULL);
-			Item *d1 = (Item *)$$;
+//			Item *d1 = (Item *)$$;
 		//	  printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s ret_type=%d \n\tret_type_name=%s name=%s dimension=%d line=%d\n", (unsigned long)d1, d1->line, d1->args_num, (unsigned long)d1->scope, d1->type, d1->type_name, d1->ret_type, d1->ret_type_name, d1->name, d1->dimension, d1->line);
 		  }
 		| /**/ {$$ = NULL;}

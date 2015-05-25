@@ -166,6 +166,8 @@ Item *newItem(){
 
 	result->truelist = NULL;
 	result->falselist = NULL;
+	result->nextlist = NULL;
+
 	return result;
 }
 void insertTable(Item *x){
@@ -509,22 +511,36 @@ void setM(char *m){
 	if (tagM == NULL) tagM = (char *)malloc(ID_MAX_LEN);
 	memset(tagM, 0, ID_MAX_LEN);
 	sprintf(tagM, "%s", m);
+	Midcode *code = newMidcode();
+	sprintf(code->sentence, "LABEL %s :\n", m);
 }
 char *getM(){
 	return tagM;
 }
 
-void mergeList(codeItem **list, Midcode *st){
-	codeItem *l = *list;
+codeItem *mergeNode(codeItem *list, Midcode *st){
+	codeItem *l = list;
 	if (l == NULL) {
 		l = newcodeItem();
 		l->code = st;
+		return l;
 	}
 	else{
 		codeItem *item = newcodeItem();
 		item->code = st;
 		item->next = l;
 		l = item;
+		return l;
+	}
+}
+codeItem *mergeList(codeItem *list1, codeItem *list2){
+	codeItem *tail2 = list2;
+	if (tail2 == NULL) return list1;
+	else{
+		while (tail2->next != NULL)
+			tail2 = tail2->next;
+		tail2->next = list1;
+		return list2;
 	}
 }
 
@@ -539,10 +555,19 @@ void replaceLabel(char *origin, char *label){
 		return;
 	}
 	memset(origin+i, 0, SENTENCE_MAX_LEN-i);
-	sprintf(origin+i, "%s", label);
+	sprintf(origin+i, "%s\n", label);
+}
+
+void displaycodeItem(codeItem *list){
+	codeItem *trace = list;
+	while (trace != NULL){
+		printf("%s", list->code->sentence);
+		trace = trace->next;
+	}
 }
 
 void backpatchList(codeItem *list, char *tag){
+	//displaycodeItem(list);
 	codeItem *trace = list;
 	while (NULL != trace){
 		replaceLabel(trace->code->sentence, tag);
@@ -577,4 +602,13 @@ void storeMidcode(){
 		trace = trace->next;
 	}
 	fclose(file);
+}
+
+void displayItemList(Item *it){
+	printf("------truelist------\n");
+	displaycodeItem(it->truelist);
+	printf("------falselist------\n");
+	displaycodeItem(it->falselist);
+	printf("------nextlist------\n");
+	displaycodeItem(it->nextlist);
 }
