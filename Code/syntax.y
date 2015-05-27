@@ -79,36 +79,10 @@ ExtDef		: Specifier ExtDecList{
 
 ExtDecList	: VarDec{
 			  $$ = $1;
-
-			  // middle start
-			 /* Item *var = (Item *)$1;
-			  Item *tp = getTempType();
-			  int arr_num = getArrayNum(var);
-			  if (arr_num > 0) {
-				  Midcode *code = newMidcode();
-				  sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
-			  }
-			  else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
-				  Midcode *code = newMidcode();
-				  sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
-			  }*/
 		  }
 		| VarDec COMMA ExtDecList	{
 			$$ = $1;
 			((Item *)$$)->next = (Item *)$3;
-
-			// middle start
-/*			Item *var = (Item *)$1;
-			Item *tp = getTempType();
-			int arr_num = getArrayNum(var);
-			if (arr_num > 0) {
-				Midcode *code = newMidcode();
-				sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp)*arr_num);
-			}
-			else if (NULL != tp && TYPE_VAR_STRUCT == tp->type) {
-				Midcode *code = newMidcode();
-				sprintf(code->sentence, "DEC %s %d\n", var->name, getTypeSize(tp));
-			}*/
 		  }
 		;
 
@@ -225,6 +199,22 @@ FunDec		: ID LP {
 			  setArgsNumber($2);
 			  ((Item *)$$)->line = ((Leaf *)$1)->line;
 			  setScope(NULL);
+			  Item *paras = (Item *)$4;
+			  while (paras != NULL){
+				  if (paras->type == TYPE_VAR_STRUCT){
+					  int length = strlen(paras->name);
+					  int i;
+					  for (i = length; i > 0; i --) paras->name[i] = paras->name[i-1];
+					  paras->name[0] = '*';
+//					  printf("para name:%s\n", paras->name);
+//					  char *tvar = getTempVar();
+//					  Midcode *code = newMidcode();
+//					  sprintf(code->sentence, "%s := *%s\n", tvar, paras->name);
+//					  code = newMidcode();
+//					  sprintf(code->sentence, "%s := %s\n", paras->name, tvar);
+				  }
+				  paras = paras->next;
+			  }
 		  }
 		| ID LP RP{
 			// 无参函数
@@ -250,19 +240,48 @@ VarList		: ParamDec COMMA VarList {
 			  $$ = $1;
 			  // middle start
 			  Item *para = (Item *)$1;
+			  Item *tp = getTempType();
+			  int size = getTypeSize(tp);
 			  Midcode *code = newMidcode();
 			  sprintf(code->sentence, "PARAM %s\n", para->name);
+/*			  if (size > 4){
+				  char *addr = getTempVar();
+				  Midcode *code = newMidcode();
+				  sprintf(code->sentence, "%s := &%s\n", addr, para->name);
+				  while (size > 4){
+					  code = newMidcode();
+					  sprintf(code->sentence, "%s := %s + #4\n", addr, addr);
+					  sprintf(code->sentence, "PARAM *%s\n", addr);
+				  }
+			  }*/
 		  }
 		| ParamDec {
 			$$ = $1;
 			// middle start
 			Item *para = (Item *)$1;
+			Item *tp = getTempType();
+			int size = getTypeSize(tp);
+
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "PARAM %s\n", para->name);
+/*			if (size > 4){
+				char *addr = getTempVar();
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "%s := &%s\n", addr, para->name);
+				while (size > 4){
+					code = newMidcode();
+					sprintf(code->sentence, "%s := %s + #4\n", addr, addr);
+					sprintf(code->sentence, "PARAM *%s\n", addr);
+				}
+			}*/
 		 }
 		;
 
 ParamDec	: Specifier VarDec {
+			  // middle start
+			  Item *tp = (Item *)$1;
+			  saveTempType(tp);
+
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
 			  if (trace != NULL){
@@ -275,10 +294,6 @@ ParamDec	: Specifier VarDec {
 				  dollar->next = NULL;
 				  dollar->dim_max = NULL;
 				  $$ = (char *)dollar;
-/*				  //middle start
-				  Midcode *code = newMidcode();
-				  sprintf(code->sentence, "PARAM %s\n", trace->name);
-				  trace = trace->next;*/
 			  }
 		  }
 		;
@@ -558,9 +573,11 @@ Dec		: VarDec{
 				  char *tvar1 = getTempVar();
 				  char *tvar2 = getTempVar();
 				  Midcode *code = newMidcode();
-				  sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
+				  if (e1->name[0] == '*') sprintf("%s := %s\n", tvar1, (e1->name)+1);
+				  else sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
 				  code = newMidcode();
-				  sprintf(code->sentence, "%s := &%s\n", tvar2, e2->name);
+				  if (e1->name[0] == '*') sprintf("%s := %s\n", tvar1, (e1->name)+1);
+				  else sprintf(code->sentence, "%s := &%s\n", tvar2, e2->name);
 				  for (; i < size; i += 4){
 					  code = newMidcode();
 					  sprintf(code->sentence, "*%s := *%s\n", tvar1, tvar2);
@@ -627,9 +644,11 @@ Exp		: Exp ASSIGNOP Exp {
 						  char *tvar1 = getTempVar();
 						  char *tvar2 = getTempVar();
 						  Midcode *code = newMidcode();
-						  sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
+						  if (e1->name[0] == '*') sprintf("%s := %s\n", tvar1, (e1->name)+1);
+						  else sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
 						  code = newMidcode();
-						  sprintf(code->sentence, "%s := &%s\n", tvar2, e2->name);
+						  if (e1->name[0] == '*') sprintf("%s := %s\n", tvar1, (e1->name)+1);
+						  else sprintf(code->sentence, "%s := &%s\n", tvar2, e2->name);
 						  for (; i < size; i += 4){
 							  code = newMidcode();
 							  sprintf(code->sentence, "*%s := *%s\n", tvar1, tvar2);
@@ -668,11 +687,6 @@ Exp		: Exp ASSIGNOP Exp {
 				e1->type = TYPE_INT;
 			}
 
-/*			printf("before merge and backpatch\n");
-			printf("e1:%lx e2:%lx\n", e1, e2);
-			displayItemList(e1);
-			displayItemList(e2);*/
-
 			// middle goto
 			backpatchList(e1->truelist, getM());
 
@@ -688,10 +702,6 @@ Exp		: Exp ASSIGNOP Exp {
 			e1->truelist = e2->truelist;
 			e1->falselist = mergeList(e1->falselist, e2->falselist);
 			$$ = (char *)e1;
-/*			printf("after");
-			displayItemList(e1);*/
-
-//			printf("AND $1:%lx, $2:%lx, $3:%lx, $4:%lx\n", $1, $2, $3, $4);
 		  }
 		| Exp OR {
 			char *label = newTagName();
@@ -748,9 +758,6 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "GOTO @\n");
 			e1->falselist = mergeNode(e1->falselist, code);
 			$$ = (char *)e1;
-
-/*			printf("relop\n");
-			printf("$$:%lx\n", $$);*/
 		  }
 		| Exp PLUS Exp {
 			Item *e1 = (Item *)$1;
@@ -936,9 +943,41 @@ Exp		: Exp ASSIGNOP Exp {
 			  else {
 				  Item *trace = in_args;
 				  while (trace != NULL){
+/*					  if (trace->type == TYPE_VAR_STRUCT){
+						  int size = getTypeSize(trace);
+						  if (size > 4){
+							  char *addr = getTempVar();
+							  Midcode *code = newMidcode();
+							  sprintf(code->sentence, "%s := &%s\n", addr, trace->name);
+							  size -= 4;
+							  while (size >= 4){
+								  char *ttvar = getTempVar();
+								  code = newMidcode();
+								  sprintf(code->sentence, "%s := %s + #%d\n", ttvar, addr, size);
+								  code = newMidcode();
+								  sprintf(code->sentence, "ARG *%s\n", ttvar);
+								  size -= 4;
+							  }
+						  }
+					  }*/
 					  printExp(&trace);
+					  Item *def = getItem(trace->name);
+					  if (def != NULL && def->type == TYPE_VAR_STRUCT && def->scope != NULL && def->scope->type == TYPE_FUNCTION){
+						  Item *as = getArgs(def->scope->name);
+						  if (isParameter(trace, as)) {
+							  int length = strlen(trace->name);
+							  int i;
+							  for (i = length; i > 0; i --) trace->name[i] = trace->name[i-1];
+							  trace->name[0] = '*';
+						  }
+					  }
+
 					  Midcode *code = newMidcode();
-					  sprintf(code->sentence, "ARG %s\n", trace->name);
+					  if (trace->type == TYPE_VAR_STRUCT) {
+						  if (trace->name[0] == '*') sprintf(code->sentence, "ARG %s\n", trace->name+1);
+						  else sprintf(code->sentence, "ARG &%s\n", trace->name);
+					  }
+					  else sprintf(code->sentence, "ARG %s\n", trace->name);
 					  trace = trace->next;
 				  }
 				  if (fun != NULL){
@@ -981,7 +1020,9 @@ Exp		: Exp ASSIGNOP Exp {
 							if (var3->dimension > 0) {
 								char *tvar00 = getTempVar();
 								Midcode *code = newMidcode();
-								sprintf(code->sentence, "%s := &%s\n", tvar00, var3->name);
+								if (var3->name[0] == '*') 
+									sprintf(code->sentence, "%s := %s\n", tvar00, (var3->name)+1);
+								else sprintf(code->sentence, "%s := &%s\n", tvar00, var3->name);
 								code = newMidcode();
 								sprintf(code->sentence, "%s := %s + %s\n", tvar00, tvar00, var3->offset);
 								code = newMidcode();
@@ -1026,6 +1067,16 @@ Exp		: Exp ASSIGNOP Exp {
 					printf("Error type 14 at Line %d: %s not %s 's component\n", ((Leaf *)$2)->line, component->name, exp->type_name);
 				}
 				else {
+					if (exp->scope != NULL && exp->scope->type == TYPE_FUNCTION){
+						Item *as = getArgs(exp->scope->name);
+						if (isParameter(exp, as)){
+							int length = strlen(exp->name);
+							int i;
+							for(i = length; i > 0; i --) exp->name[i] = exp->name[i-1];
+							exp->name[0] = '*';
+						}
+					}
+
 					Item *dollar = newItem();
 					memcpy(dollar, component, sizeof(Item));
 					dollar->dimension = 0;
@@ -1050,14 +1101,14 @@ Exp		: Exp ASSIGNOP Exp {
 						// array cond
 						printExp(&exp);
 						Midcode *code = newMidcode();
-						sprintf(code->sentence, "%s := &%s\n", tvar, exp->name);
+//						printf("dot exp name:%s\n", exp->name);
+						if (exp->name[0] == '*') sprintf(code->sentence, "%s := %s\n", tvar, exp->name+1);
+						else sprintf(code->sentence, "%s := &%s\n", tvar, exp->name);
 						char *tvar1 = getTempVar();
 						code = newMidcode();
 						sprintf(code->sentence, "%s := %s + #%d\n", tvar1, tvar, offset);
-						char *tvar2 = getTempVar();
-						code = newMidcode();
-						sprintf(code->sentence, "%s := *%s\n", tvar2, tvar1);
-						cpy(dollar->name, tvar2);
+						memset(dollar->name, 0, ID_MAX_LEN);
+						sprintf(dollar->name, "*%s", tvar1);
 					}
 
 					$$ = (char *)dollar;
@@ -1107,16 +1158,11 @@ Args		: Exp COMMA Args {
 			  Item *e3 = (Item *)$3;
 			  e1->next = e3;
 			  $$ = (char *)e1;
-			 // printf("Args->Exp COMMA Args: %lx->%lx\n", d1, d3);
-			 // printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s ret_type=%d \n\tret_type_name=%s name=%s dimension=%d line=%d\n", (unsigned long)d1, d1->line, d1->args_num, (unsigned long)d1->scope, d1->type, d1->type_name, d1->ret_type, d1->ret_type_name, d1->name, d1->dimension, d1->line);
 		  }
 		| Exp {
 			Item *e = (Item *)$1;
 			$$ = $1;
 			((Item *)$$)->next = NULL;
-		//	printf("Args->Exp: %lx->%lx\n", $$, NULL);
-//			Item *d1 = (Item *)$$;
-		//	  printf("%lx:%d Item:\targs_num=%d scope=%lx type=%d type_name=%s ret_type=%d \n\tret_type_name=%s name=%s dimension=%d line=%d\n", (unsigned long)d1, d1->line, d1->args_num, (unsigned long)d1->scope, d1->type, d1->type_name, d1->ret_type, d1->ret_type_name, d1->name, d1->dimension, d1->line);
 		  }
 		| /**/ {$$ = NULL;}
 		;

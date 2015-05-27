@@ -220,6 +220,15 @@ bool isContain(char *var){
 	return false;
 }
 
+bool isParameter(Item *it, Item *args){
+	Item *trace = args;
+	while (trace != NULL){
+		if (cmp(it->name, trace->name) == 0) return true;
+		trace = trace->next;
+	}
+	return false;
+}
+
 Item *getItem(char *name){
 	if (name == NULL) return NULL;
 	Item *trace = table;
@@ -434,6 +443,13 @@ void printExp(Item **exp){
 				memset(e->name, 0, ID_MAX_LEN);
 				sprintf(e->name, "%s", tvar);
 				e->dimension = 0;
+			}
+			if (memcmp(e->name, "CALL", 4) == 0){
+				char *tvar = getTempVar();
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "%s := %s\n", tvar, e->name);
+				memset(e->name, 0, ID_MAX_LEN);
+				sprintf(e->name, "%s", tvar);
 			}
 		}
 	}

@@ -164,6 +164,9 @@ void displayTable(Item *table);
 // 符号表里是否包含以var为名的变量或者结构体
 bool isContain(char *var);
 
+// 判断是不是参数
+bool isParameter(Item *it, Item *args);
+
 // 获取符号表里以name为名的符号表项
 Item *getItem(char *name);
 
