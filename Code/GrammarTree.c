@@ -163,6 +163,7 @@ Item *newItem(){
 	result->dim_max = NULL;
 	memset(result->offset, 0, ID_MAX_LEN*2);
 	result->next = NULL;
+	memset(result->def_name, 0, ID_MAX_LEN);
 
 	result->truelist = NULL;
 	result->falselist = NULL;
@@ -371,15 +372,19 @@ Item *temp_type = NULL;
 int getStructSize(Item *it){
 	if (it == NULL) return -1;
 	if (TYPE_STRUCT == it->type || TYPE_VAR_STRUCT == it->type){
+//		printf("struct name=%s\n", it->type_name);
 		int result = 0;
 		Item *def = getItem(it->type_name);
 		Item *mems = getStructMember((char *)def);
 		Item *trace = mems;
 		while (trace != NULL){
+			int arrNum = getArrayNum(trace);
+			if (arrNum == 0) arrNum = 1;
+//			printf("trace name=%s arrNum=%d\n", trace->name, arrNum);
 			switch(trace->type){
-				case TYPE_VAR_INT: result += 4; break;
-				case TYPE_VAR_FLOAT: result += 4; break;
-				case TYPE_VAR_STRUCT: result += getStructSize(trace); break;
+				case TYPE_VAR_INT: result += arrNum*4; break;
+				case TYPE_VAR_FLOAT: result += arrNum*4; break;
+				case TYPE_VAR_STRUCT: result += arrNum*getStructSize(trace); break;
 				default: break;
 			}
 			trace = trace->next;
@@ -435,13 +440,12 @@ void printExp(Item **exp){
 			if (e->dimension > 0){
 				char *tvar = getTempVar();
 				Midcode *code = newMidcode();
-				sprintf(code->sentence, "%s := &%s\n", tvar, e->name);
+				if (e->name[0] == '*') sprintf(code->sentence, "%s := %s\n", tvar, e->name+1);
+				else sprintf(code->sentence, "%s := &%s\n", tvar, e->name);
 				code = newMidcode();
 				sprintf(code->sentence, "%s := %s + %s\n", tvar, tvar, e->offset);
-				code = newMidcode();
-				sprintf(code->sentence, "%s := *%s\n", tvar, tvar);
 				memset(e->name, 0, ID_MAX_LEN);
-				sprintf(e->name, "%s", tvar);
+				sprintf(e->name, "*%s", tvar);
 				e->dimension = 0;
 			}
 			if (memcmp(e->name, "CALL", 4) == 0){
@@ -510,7 +514,6 @@ Midcode *newMidcode(){
 		code_tail->next = code;
 		code_tail = code;
 	}
-
 	return code;
 }
 
@@ -627,4 +630,12 @@ void displayItemList(Item *it){
 	displaycodeItem(it->falselist);
 	printf("------nextlist------\n");
 	displaycodeItem(it->nextlist);
+}
+
+int isBoolean = false;
+int getBoolean(){
+	return isBoolean;
+}
+void setBoolean(int b){
+	isBoolean = b;
 }

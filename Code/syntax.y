@@ -52,6 +52,7 @@ ExtDef		: Specifier ExtDecList{
 			  // 全局变量的定义
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
+			  // 这里的循环讲连续定义的全局变量插入符号表 
 			  while (trace != NULL){
 				  item->type = ((Item *)$1)->type;
 				  cpy(item->type_name, ((Item *)$1)->type_name);
@@ -86,16 +87,19 @@ ExtDecList	: VarDec{
 		  }
 		;
 
-Specifier	: TYPE {  // 符号表建立相关
+Specifier	: TYPE {  // 基本类型的变量
 			  $$ = (char *)newItem();
 			  if (cmp(((Leaf *)$1)->val.val_name, "int") == 0) ((Item *)$$)->type = TYPE_VAR_INT;
 			  else if (cmp(((Leaf *)$1)->val.val_name, "float") == 0) ((Item *)$$)->type = TYPE_VAR_FLOAT;
 			  ((Item *)$$)->scope = getScope();
+			  // 在做符号表插入操作之前，先暂时保存变量的类型
 			  saveTempType((Item *)$$);
 		  }
 		| StructSpecifier {
+			// 结构体类型的变量
 			$$ = $1;
 			((Item *)$$)->type = TYPE_VAR_STRUCT;
+			// 暂时保存变量的类型
 			saveTempType((Item *)$$);
 		  }
 		;
@@ -142,6 +146,7 @@ OptTag		: ID{
 			  }
 		  }
 		| /* empty */{
+			// 给匿名结构体一个名字，让结构体等价判断更方便【名等价一定结构等价，反过来不是
 			$$ = (char *)newItem();
 			cpy(((Item *)$$)->type_name, getAnonymousStruct());
 		  }
@@ -158,7 +163,7 @@ Tag		: ID{
 		;
 
 VarDec		: ID {
-			  // 变量
+			  // 变量名
 			  $$ = (char *)newItem();
 			  ((Item *)$$)->scope = getScope();
 			  cpy(((Item *)$$)->name, ((Leaf *)$1)->val.val_name);
@@ -166,10 +171,10 @@ VarDec		: ID {
 			  ((Item *)$$)->dimension = 0;
 		  }
 		| VarDec LB INT {
-			// 变量数组
+			// 数组变量
 			$$ = $1;
-			((Item *)$$)->dimension ++;
-			int *tmp = ((Item *)$$)->dim_max;
+			((Item *)$$)->dimension ++;		//保存数组变量的维数，例如a[3][5]最后保存的维数=2
+			int *tmp = ((Item *)$$)->dim_max;	//保存数组变量每一维的最大标号，使用动态数组来保存，因为无法确定维数
 			((Item *)$$)->dim_max = (int *)malloc((((Item *)$$)->dimension)*sizeof(int));
 			int i;
 			for (i = 0; i < ((Item *)$$)->dimension-1; i++) ((Item *)$$)->dim_max[i] = tmp[i];
@@ -184,14 +189,14 @@ FunDec		: ID LP {
 			  // 带参函数
 			  $2 = (char *)newItem();
 			  ((Item *)$2)->scope = NULL;
-			  ((Item *)$2)->type = TYPE_FUNCTION;
+			  ((Item *)$2)->type = TYPE_FUNCTION;	//所有的变量都保存在一张符号表里，设置类型以区分符号类型
 			  ((Item *)$2)->line = ((Leaf *)$1)->line;
 			  if ($1 != NULL) cpy(((Item *)$2)->name, ((Leaf *)$1)->val.val_name);
 			  else printf("$1 is null\n");
 			  insertTable((Item *)$2);
 			  setScope((Item *)$2);
 
-			  // middle start
+			  // middle start，函数定义的中间代码生成
 			  Midcode *code = newMidcode();
 			  sprintf(code->sentence, "FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
 		  } VarList RP{
@@ -201,17 +206,13 @@ FunDec		: ID LP {
 			  setScope(NULL);
 			  Item *paras = (Item *)$4;
 			  while (paras != NULL){
+				  // 因为设置了结构体使用引用传递，所以实际上传的是地址，所以需要在传完参数之后马上设置*来取值
+				  // 直接修改变量名其实不太好，不过这样最方便
 				  if (paras->type == TYPE_VAR_STRUCT){
 					  int length = strlen(paras->name);
 					  int i;
 					  for (i = length; i > 0; i --) paras->name[i] = paras->name[i-1];
 					  paras->name[0] = '*';
-//					  printf("para name:%s\n", paras->name);
-//					  char *tvar = getTempVar();
-//					  Midcode *code = newMidcode();
-//					  sprintf(code->sentence, "%s := *%s\n", tvar, paras->name);
-//					  code = newMidcode();
-//					  sprintf(code->sentence, "%s := %s\n", paras->name, tvar);
 				  }
 				  paras = paras->next;
 			  }
@@ -227,7 +228,7 @@ FunDec		: ID LP {
 			else printf("$1 is null\n");
 			insertTable((Item *)$$);
 
-			// middle start
+			// middle start，函数定义中间代码生成
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "FUNCTION %s :\n", ((Leaf *)$1)->val.val_name);
 		  }
@@ -244,7 +245,8 @@ VarList		: ParamDec COMMA VarList {
 			  int size = getTypeSize(tp);
 			  Midcode *code = newMidcode();
 			  sprintf(code->sentence, "PARAM %s\n", para->name);
-/*			  if (size > 4){
+			  /* 使用值传递会获得一个超长的参数列表，所以最后还是放弃了
+			  if (size > 4){
 				  char *addr = getTempVar();
 				  Midcode *code = newMidcode();
 				  sprintf(code->sentence, "%s := &%s\n", addr, para->name);
@@ -264,7 +266,8 @@ VarList		: ParamDec COMMA VarList {
 
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "PARAM %s\n", para->name);
-/*			if (size > 4){
+			/* 使用值传递会获得一个超长的参数列表，所以最后还是放弃了
+				if (size > 4){
 				char *addr = getTempVar();
 				Midcode *code = newMidcode();
 				sprintf(code->sentence, "%s := &%s\n", addr, para->name);
@@ -316,11 +319,14 @@ StmtList	: Stmt {
 			  char *label = newTagName();
 			  setM(label);
 			  Item *st = (Item *)$1;
-			  backpatchList(st->nextlist, getM());
+			  backpatchList(st->nextlist, getM());	//回填nextlist
 		  } StmtList {
 			  $$ = $3;
 		  }
-		| /* empty */ { $$ = (char *)newItem(); }
+		| /* empty */ { 
+			// 后来发现这里会与IF ELSE语句的回填专用符号N产生冲突，因为两个都可以产生空语句
+			$$ = (char *)newItem(); 
+		  }
 		;
 
 Stmt		: Exp SEMI {
@@ -328,6 +334,7 @@ Stmt		: Exp SEMI {
 
 			  // middle start
 			  Item *e1 = (Item *)$1;
+			  // 不能直接调用函数，而是一定要有个返回值。。。这什么诡异设定
 			  if (memcmp(e1->name, "CALL", 4) == 0){
 				  printExp(&e1);
 				  char *tvar = getTempVar();
@@ -344,6 +351,7 @@ Stmt		: Exp SEMI {
 			cpy(t0->result_type_name, t2->type_name);
 
 			// middle start
+			// 函数成功返回
 			printExp(&t2);
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "RETURN %s\n", t2->name);
@@ -372,6 +380,7 @@ Stmt		: Exp SEMI {
 			$$ = (char *)dollar;
 		  }
 		| IF LP Exp RP M Stmt ELSE {
+			// 其实这一段代码是N产生式的工作，但是幸好ELSE其实是个无意义的符号，所以放在这里恰好可以消除冲突
 			Midcode *code = newMidcode();
 			sprintf(code->sentence, "GOTO @\n");
 			Item *dollar = newItem();
@@ -414,6 +423,18 @@ Stmt		: Exp SEMI {
 			$2 = label;
 		  } Exp RP{
 			Item *cond = (Item *)$4;
+			//middle start
+			// middle goto
+			printExp(&cond);
+			if (getBoolean() == 0){
+				Midcode *code = newMidcode();
+				sprintf(code->sentence, "IF %s != #0 GOTO @\n", cond->name);
+				cond->truelist = mergeNode(cond->truelist, code);
+				code = newMidcode();
+				sprintf(code->sentence, "GOTO @\n");
+				cond->falselist = mergeNode(cond->falselist, code);
+			}
+
 			if (cond->type != TYPE_INT && cond->type != TYPE_VAR_INT)
 				printf("Error type ? at Line %d: error condition type\n", ((Leaf *)$1)->line);
 			Item *tmp = newItem();
@@ -669,6 +690,8 @@ Exp		: Exp ASSIGNOP Exp {
 				  e1->type = TYPE_VAR_INT;
 				  $$ = (char *)e1;
 			  }
+			  // 不是bool表达式
+			  setBoolean(0);
 		  }
 		| Exp AND {
 			// middle goto
@@ -702,6 +725,9 @@ Exp		: Exp ASSIGNOP Exp {
 			e1->truelist = e2->truelist;
 			e1->falselist = mergeList(e1->falselist, e2->falselist);
 			$$ = (char *)e1;
+
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| Exp OR {
 			char *label = newTagName();
@@ -733,6 +759,8 @@ Exp		: Exp ASSIGNOP Exp {
 			e1->falselist = e2->falselist;
 
 			$$ = (char *)e1;
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| Exp RELOP Exp {
 			Item *e1 = (Item *)$1;
@@ -758,6 +786,8 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "GOTO @\n");
 			e1->falselist = mergeNode(e1->falselist, code);
 			$$ = (char *)e1;
+			// 是bool表达式
+			setBoolean(1);
 		  }
 		| Exp PLUS Exp {
 			Item *e1 = (Item *)$1;
@@ -783,6 +813,8 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "%s := %s + %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| Exp MINUS Exp {
 			Item *e1 = (Item *)$1;
@@ -808,6 +840,8 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "%s := %s - %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
+			// 不是bool表达式
+			setBoolean(0);
 		  }		
 		| Exp STAR Exp {
 			Item *e1 = (Item *)$1;
@@ -833,6 +867,8 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "%s := %s * %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
+			// 不是bool表达式
+			setBoolean(0);
 		  }		
 		| Exp DIV Exp {
 			Item *e1 = (Item *)$1;
@@ -858,6 +894,8 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "%s := %s * %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
+			// 不是bool表达式
+			setBoolean(0);
 		  }		
 		| LP Exp RP %prec LL_THAN_ELSE	{$$ = $2;}
 		| MINUS Exp %prec HIGH_MINUS {
@@ -881,6 +919,8 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "%s := #0 - %s\n", dollar, e1->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| NOT Exp{
 			Item *e1 = (Item *)$2;
@@ -906,6 +946,8 @@ Exp		: Exp ASSIGNOP Exp {
 			sprintf(code->sentence, "%s := !%s\n", dollar, e1->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| ID LP {
 			Item *fun = getItem(((Leaf *)$1)->val.val_name);
@@ -998,11 +1040,14 @@ Exp		: Exp ASSIGNOP Exp {
 			  }
 
 			  $$ = (char *)dollar;
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| Exp LB Exp RB	{
 			Item *var = (Item *)$1;
 			Item *var3 = (Item *)$3;
 			Item *def = getItem(var->name);
+			if (def == NULL) def = getItem(var->def_name);
 			if (var->type == TYPE_VAR_INT || var->type == TYPE_VAR_FLOAT || var->type == TYPE_VAR_STRUCT){
 				if (var3->type == TYPE_INT || var3->type == TYPE_VAR_INT){
 					var->dimension ++;
@@ -1053,6 +1098,8 @@ Exp		: Exp ASSIGNOP Exp {
 			}
 			else printf("Error type 10 at Line %d: %s not array\n", ((Leaf *)$2)->line, var->name);
 			$$ = (char *)var;
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| Exp DOT ID {
 			Leaf *mem = (Leaf *)$3;
@@ -1101,12 +1148,13 @@ Exp		: Exp ASSIGNOP Exp {
 						// array cond
 						printExp(&exp);
 						Midcode *code = newMidcode();
-//						printf("dot exp name:%s\n", exp->name);
 						if (exp->name[0] == '*') sprintf(code->sentence, "%s := %s\n", tvar, exp->name+1);
 						else sprintf(code->sentence, "%s := &%s\n", tvar, exp->name);
 						char *tvar1 = getTempVar();
 						code = newMidcode();
 						sprintf(code->sentence, "%s := %s + #%d\n", tvar1, tvar, offset);
+						memset(dollar->def_name, 0, ID_MAX_LEN);
+						cpy(dollar->def_name, mem->val.val_name);
 						memset(dollar->name, 0, ID_MAX_LEN);
 						sprintf(dollar->name, "*%s", tvar1);
 					}
@@ -1114,6 +1162,8 @@ Exp		: Exp ASSIGNOP Exp {
 					$$ = (char *)dollar;
 				}
 			}
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| ID { 
 			if (!isContain(((Leaf *)$1)->val.val_name)) {
@@ -1132,6 +1182,8 @@ Exp		: Exp ASSIGNOP Exp {
 				}
 				$$ = (char *)dd;
 			}
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| INT {
 			Item *tmp = newItem();
@@ -1139,7 +1191,8 @@ Exp		: Exp ASSIGNOP Exp {
 			tmp->type = TYPE_INT;
 			sprintf(tmp->name, "#%d", ((Leaf *)$1)->val.val_int);
 			$$ = (char *)tmp;
-//			printf("exp type=%d\n", ((Item *)$$)->type);
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| FLOAT {
 			Item *tmp = newItem();
@@ -1147,7 +1200,8 @@ Exp		: Exp ASSIGNOP Exp {
 			tmp->type = TYPE_FLOAT;
 			sprintf(tmp->name, "#%lf", ((Leaf *)$1)->val.val_double);
 			$$ = (char *)tmp;
-//			printf("exp type=%d\n", ((Item *)$$)->type);
+			// 不是bool表达式
+			setBoolean(0);
 		  }
 		| error RP %prec RP_ERR		{}
 		| Exp error			{}

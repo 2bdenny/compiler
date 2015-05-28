@@ -106,6 +106,7 @@ typedef struct item{
 	int dimension;
 	int *dim_max;
 	char offset[ID_MAX_LEN*2];
+	char def_name[ID_MAX_LEN];
 
 	codeItem *truelist;
 	codeItem *falselist;
@@ -248,4 +249,8 @@ void storeMidcode();
 // 待填充列表
 void displaycodeItem(codeItem *list);
 void displayItemList(Item *it);
+
+// 保存当前的exp是不是bool表达式，是返回1，不是返回0
+int getBoolean();
+void setBoolean(int b);
 #endif
