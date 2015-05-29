@@ -244,7 +244,7 @@ char *newTagName();
 void displayMidcode();
 
 // 保存所有中间代码到文件中
-void storeMidcode();
+void storeMidcode(char *filename);
 
 // 待填充列表
 void displaycodeItem(codeItem *list);

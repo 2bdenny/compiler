@@ -11,6 +11,7 @@ int count = 0;
 Tree *forest = NULL;
 int getError = 0;
 
+// 制造一个词
 Leaf *makeLeaf(int line, int valno, int terminal, char *token, Value val){
 	Leaf *x = (Leaf *)malloc(sizeof(Leaf));
 	x->line = line;
@@ -131,17 +132,24 @@ void destroyForest(){
 		free(tmp);
 	}
 }
-
+//-----------------------------------------------
+//以上是lab1和lab2部分，下面开始是lab3部分
+//-----------------------------------------------
+//简化memcmp
 int cmp(char *a, char *b){
 	int maxLen = max(strlen(a), strlen(b));
 	return memcmp(a, b, maxLen);
 }
+//简化memcpy
 void *cpy(char *a, char *b){
 	int maxLen = max(strlen(a), strlen(b));
 	return memcpy(a, b, maxLen);
 }
+//获取符号表的符号的作用域
 Item *getScope(){return scope;}
+//设置作用域
 void setScope(Item *new_scope){scope = new_scope;}
+//获取一个新的符号表项
 Item *newItem(){
 	Item *result = (Item *)malloc(sizeof(Item));
 
@@ -171,6 +179,7 @@ Item *newItem(){
 
 	return result;
 }
+//插入到符号表
 void insertTable(Item *x){
 	if (x != NULL){
 		if (x->type == TYPE_STRUCT && isContain(x->type_name)) {
@@ -197,6 +206,7 @@ void insertTable(Item *x){
 	}
 //	displayTable(table);
 }
+//展示符号表
 void displayTable(Item *table){
 	printf("--------Current Table---------\n");
 	int number = -1;
@@ -208,7 +218,7 @@ void displayTable(Item *table){
 	}
 	printf("------------------------------\n");
 }
-
+//符号表中是否已经存在这个符号
 bool isContain(char *var){
 	// 保证匿名结构体都可以被保存
 	if (var == NULL || strlen(var) == 0) return false;
@@ -220,7 +230,7 @@ bool isContain(char *var){
 	}
 	return false;
 }
-
+//it是不是函数的参数，主要用在函数嵌套调用的时候
 bool isParameter(Item *it, Item *args){
 	Item *trace = args;
 	while (trace != NULL){
@@ -229,7 +239,7 @@ bool isParameter(Item *it, Item *args){
 	}
 	return false;
 }
-
+//获取一个符号表项
 Item *getItem(char *name){
 	if (name == NULL) return NULL;
 	Item *trace = table;
@@ -239,6 +249,7 @@ Item *getItem(char *name){
 	}
 	return NULL;
 }
+//获取保存的类型，主要用在逗号隔开的定义那边
 int getType(char *item){
 	if (item == NULL) return -1;
 	else {
@@ -247,6 +258,7 @@ int getType(char *item){
 		else return it->type;
 	}
 }
+//设置函数参数个数
 void setArgsNumber(char *item){
 	if (item == NULL) return;
 	else {
@@ -258,7 +270,7 @@ void setArgsNumber(char *item){
 		}
 	}
 }
-
+//比较参数类型相等
 bool cmpItem(Item *it1, Item *it2){
 	if ((it1 == NULL && it2 != NULL) || (it1 != NULL && it2 == NULL)) return false;
 	// 两个都是null，默认相等
@@ -282,7 +294,6 @@ bool cmpItem(Item *it1, Item *it2){
 	else if ((it1->type == TYPE_VAR_INT && it2->type == TYPE_INT)||(it1->type == TYPE_VAR_FLOAT && it2->type == TYPE_FLOAT)) return true;
 	else return false;
 }
-
 // 获取函数的参数列表
 Item *getArgs(char *name){
 //	displayTable(table);
@@ -319,6 +330,7 @@ Item *getArgs(char *name){
 //	displayTable(table);
 	return result;
 }
+//比较两个参数列表是否match
 bool cmpArgs(Item *def, Item *in){
 	while (def != NULL && in != NULL){
 		// 参数类型不匹配
@@ -330,6 +342,7 @@ bool cmpArgs(Item *def, Item *in){
 	if (def != NULL || in != NULL) return false;
 	return true;
 }
+//获取所有的结构体成员
 Item *getStructMember(char *item){
 	Item *result = NULL;
 	Item *tail = NULL;
@@ -359,20 +372,19 @@ Item *getStructMember(char *item){
 	}
 	return result;
 }
-
+//匿名结构体的结构体名
 int anonymous = 0;
 char *getAnonymousStruct(){
 	char *name = (char *)malloc(ID_MAX_LEN*sizeof(char));
 	sprintf(name, "%d_", anonymous++);
 	return name;
 }
-
-
+//临时保存的类型
 Item *temp_type = NULL;
+//获取一个结构体所占的空间大小
 int getStructSize(Item *it){
 	if (it == NULL) return -1;
 	if (TYPE_STRUCT == it->type || TYPE_VAR_STRUCT == it->type){
-//		printf("struct name=%s\n", it->type_name);
 		int result = 0;
 		Item *def = getItem(it->type_name);
 		Item *mems = getStructMember((char *)def);
@@ -380,7 +392,6 @@ int getStructSize(Item *it){
 		while (trace != NULL){
 			int arrNum = getArrayNum(trace);
 			if (arrNum == 0) arrNum = 1;
-//			printf("trace name=%s arrNum=%d\n", trace->name, arrNum);
 			switch(trace->type){
 				case TYPE_VAR_INT: result += arrNum*4; break;
 				case TYPE_VAR_FLOAT: result += arrNum*4; break;
@@ -393,6 +404,7 @@ int getStructSize(Item *it){
 	}
 	else return -1;
 }
+//获取一个类型所占的空间大小，注意只是类型，所以碰到数组要自己处理
 int getTypeSize(Item *it){
 	if (it == NULL) return -1;
 	switch(it->type){
@@ -402,6 +414,7 @@ int getTypeSize(Item *it){
 		default: return -1;
 	}
 }
+//获取数组元素个数，注意多维数组
 int getArrayNum(Item *it){
 	if (it == NULL) return -1;
 	int result = 0;
@@ -415,15 +428,17 @@ int getArrayNum(Item *it){
 	}
 	return result;
 }
+//临时保存类型
 void saveTempType(Item *tp){
 	if (NULL == temp_type) temp_type = newItem();
 	if (tp != NULL) memcpy(temp_type, tp, sizeof(Item));
 	else printf("Error occurred when saveTempType, tp is null\n");
 }
+//获取临时保存的类型
 Item *getTempType(){
 	return temp_type;
 }
-
+//生成临时变量
 int temp_var_num = 0;
 char *getTempVar(){
 	char *name = (char *)malloc(ID_MAX_LEN*sizeof(char));
@@ -431,6 +446,7 @@ char *getTempVar(){
 	sprintf(name, "v%d", temp_var_num++);
 	return name;
 }
+//假如是函数调用或者数组成员，需要做一些预处理
 void printExp(Item **exp){
 	if (NULL == exp) return;
 	else {
@@ -458,7 +474,7 @@ void printExp(Item **exp){
 		}
 	}
 }
-
+//初始化符号表，主要是加入write和read
 void initTable(){
 	Item *read = newItem();
 	read->scope = NULL;
@@ -487,7 +503,7 @@ void initTable(){
 	insertTable(arg);
 }
 
-// 最后写入的文件的问价指针
+// 最后写入的文件的文件指针
 FILE *file = NULL;
 
 // 行号
@@ -499,7 +515,7 @@ Midcode *code_tail = NULL;
 
 // label的number不会重复
 int tag_num = 0;
-
+// 一条中间代码
 Midcode *newMidcode(){
 	Midcode *code = (Midcode *)malloc(sizeof(Midcode));
 	code->line = line_num ++;
@@ -516,7 +532,7 @@ Midcode *newMidcode(){
 	}
 	return code;
 }
-
+// 一条待填充中间代码
 codeItem *newcodeItem(){
 	codeItem *item = (codeItem *)malloc(sizeof(codeItem));
 	item->code = NULL;
@@ -562,7 +578,7 @@ codeItem *mergeList(codeItem *list1, codeItem *list2){
 		return list2;
 	}
 }
-
+// 回填的辅助函数
 void replaceLabel(char *origin, char *label){
 	int maxlen = strlen(origin);
 	int i;
@@ -608,9 +624,9 @@ void displayMidcode(){
 		trace = trace->next;
 	}
 }
-
-void storeMidcode(){
-	file = fopen("./midcode.ir", "w+");
+// 保存中间代码
+void storeMidcode(char *filename){
+	file = fopen(filename, "w+");
 	if (NULL == file){
 		printf("Error occurred in open file\n");
 		return;

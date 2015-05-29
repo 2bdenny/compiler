@@ -426,6 +426,7 @@ Stmt		: Exp SEMI {
 			//middle start
 			// middle goto
 			printExp(&cond);
+			// 使用这个来处理 while (i) 这样的情况
 			if (getBoolean() == 0){
 				Midcode *code = newMidcode();
 				sprintf(code->sentence, "IF %s != #0 GOTO @\n", cond->name);
@@ -453,6 +454,7 @@ Stmt		: Exp SEMI {
 			else setScope(NULL);
 
 			// middle goto
+			// while 循环最后的跳转语句
 			Midcode *loop = newMidcode();
 			sprintf(loop->sentence, "GOTO %s\n", $2);
 			Item *st = (Item *)$7;
@@ -466,7 +468,7 @@ Stmt		: Exp SEMI {
 		| error SEMI %prec STM_ERR	{}
 		;
 
-M		: /**/ {
+M		: /**/ {	// M标记，实际上就是打标签
 			       char *label = newTagName();
 			       Midcode *code = newMidcode();
 			       sprintf(code->sentence, "LABEL %s :\n", label);
@@ -487,6 +489,7 @@ Def		: Specifier DecList SEMI {
 			  Item *trace = (Item *)$2;
 			  Item *item = trace;
 			  //displayTable((Item *)$2);
+			  // 由于存在用逗号隔开的情况，所以需要使用循环来记录所有的定义
 			  while (trace != NULL){
 				  if (item->type != -1) {
 					  if (item->type != t1->type){
@@ -525,6 +528,7 @@ DecList		: Dec {
 Dec		: VarDec{
 			  $$ = $1;
 
+			  // 变量定义。只有函数内部的变量需要进行声明，全局变量不需要声明
 			  // middle start
 			  if (getScope() != NULL && (getScope()->type == TYPE_STRUCT || getScope()->type == TYPE_VAR_STRUCT));
 			  else{
@@ -574,9 +578,11 @@ Dec		: VarDec{
 			  e1->scope = getScope();
 
 			  // middle start
+			  // 定义变量后马上进行赋值操作
 			  Item *tp = getTempType();
 			  if (TYPE_VAR_INT == tp->type || TYPE_VAR_FLOAT == tp->type){
 				  printExp(&e2);
+				  // 如果是利用返回值赋值，需要一个中间变量来保存返回值，避免左右都是内存里变量的情况
 				  if (memcmp(e2->name, "CALL", 4) == 0) {
 					  char *tvar1 = getTempVar();
 					  Midcode *c = newMidcode();
@@ -594,6 +600,8 @@ Dec		: VarDec{
 				  char *tvar1 = getTempVar();
 				  char *tvar2 = getTempVar();
 				  Midcode *code = newMidcode();
+				  // 类似的这种操作都是将 *& 和 *& 删掉，这两个操作合并到一起的时候可以直接赋值
+				  // 这里的循环进行结构体赋值，跟传参不同，这里是值传递
 				  if (e1->name[0] == '*') sprintf("%s := %s\n", tvar1, (e1->name)+1);
 				  else sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
 				  code = newMidcode();
@@ -601,6 +609,7 @@ Dec		: VarDec{
 				  else sprintf(code->sentence, "%s := &%s\n", tvar2, e2->name);
 				  for (; i < size; i += 4){
 					  code = newMidcode();
+					  // 由于只有两个变量，所以可以出现左右同时为取*的情况
 					  sprintf(code->sentence, "*%s := *%s\n", tvar1, tvar2);
 					  if (i+4 < size){
 						  code = newMidcode();
@@ -625,6 +634,7 @@ Exp		: Exp ASSIGNOP Exp {
 					  // middle start
 					  printExp(&e1);
 					  printExp(&e2);
+					  // 同理，调用函数的情况需要多一句处理
 					  if (memcmp(e2->name, "CALL", 4) == 0) {
 						  char *tvar1 = getTempVar();
 						  Midcode *c = newMidcode();
@@ -665,6 +675,7 @@ Exp		: Exp ASSIGNOP Exp {
 						  char *tvar1 = getTempVar();
 						  char *tvar2 = getTempVar();
 						  Midcode *code = newMidcode();
+						  // 结构体赋值
 						  if (e1->name[0] == '*') sprintf("%s := %s\n", tvar1, (e1->name)+1);
 						  else sprintf(code->sentence, "%s := &%s\n", tvar1, e1->name);
 						  code = newMidcode();
@@ -718,7 +729,7 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e2);
 			char *dollar = getTempVar();
 			Midcode *code = newMidcode();
-			sprintf(code->sentence, "%s := %s && %s\n", dollar, e1->name, e2->name);
+			sprintf(code->sentence, "%s := %s && %s\n", dollar, e1->name, e2->name); //后来发现并没有&&这种，但是不删了
 			cpy(e1->name, dollar);
 
 			// middle goto
@@ -985,7 +996,8 @@ Exp		: Exp ASSIGNOP Exp {
 			  else {
 				  Item *trace = in_args;
 				  while (trace != NULL){
-/*					  if (trace->type == TYPE_VAR_STRUCT){
+					/* 同理，本来想做值传递，后来还是觉得用引用传递比较好
+					  if (trace->type == TYPE_VAR_STRUCT){
 						  int size = getTypeSize(trace);
 						  if (size > 4){
 							  char *addr = getTempVar();
@@ -1005,6 +1017,8 @@ Exp		: Exp ASSIGNOP Exp {
 					  printExp(&trace);
 					  Item *def = getItem(trace->name);
 					  if (def != NULL && def->type == TYPE_VAR_STRUCT && def->scope != NULL && def->scope->type == TYPE_FUNCTION){
+						  // 这里使用了一种取巧的方法，由于结构体传进来的是地址，但是后面想使用的是值
+						  // 所以直接修改了变量名（在前面加了一个*）
 						  Item *as = getArgs(def->scope->name);
 						  if (isParameter(trace, as)) {
 							  int length = strlen(trace->name);
@@ -1016,6 +1030,7 @@ Exp		: Exp ASSIGNOP Exp {
 
 					  Midcode *code = newMidcode();
 					  if (trace->type == TYPE_VAR_STRUCT) {
+						  // 对*的特殊处理
 						  if (trace->name[0] == '*') sprintf(code->sentence, "ARG %s\n", trace->name+1);
 						  else sprintf(code->sentence, "ARG &%s\n", trace->name);
 					  }
@@ -1023,6 +1038,7 @@ Exp		: Exp ASSIGNOP Exp {
 					  trace = trace->next;
 				  }
 				  if (fun != NULL){
+					  // 这里read和write虽然是函数，但是是系统函数，所以不能跟自己的函数一样处理
 					  if (cmp(fun->name, "write") == 0){
 						  dollar->type = TYPE_INT;
 						  Midcode *code = newMidcode();
@@ -1061,6 +1077,7 @@ Exp		: Exp ASSIGNOP Exp {
 						for (i = var->dimension; i < def->dimension; i ++) dim_step *= def->dim_max[i];
 						dim_step *= getTypeSize(def);
 						char *tvar0 = getTempVar();
+						// 假如是数组
 						if (var->dimension == 1) {
 							if (var3->dimension > 0) {
 								char *tvar00 = getTempVar();
@@ -1153,6 +1170,8 @@ Exp		: Exp ASSIGNOP Exp {
 						char *tvar1 = getTempVar();
 						code = newMidcode();
 						sprintf(code->sentence, "%s := %s + #%d\n", tvar1, tvar, offset);
+						// 无论如何一定要把变量名保存下来【万一是数组呢。。。
+						// 噢艹。。。万能符号表简直了。。。Orz。。。
 						memset(dollar->def_name, 0, ID_MAX_LEN);
 						cpy(dollar->def_name, mem->val.val_name);
 						memset(dollar->name, 0, ID_MAX_LEN);
@@ -1198,6 +1217,7 @@ Exp		: Exp ASSIGNOP Exp {
 			Item *tmp = newItem();
 			tmp->line = ((Leaf *)$1)->line;
 			tmp->type = TYPE_FLOAT;
+			// 结果并不会有浮点数
 			sprintf(tmp->name, "#%lf", ((Leaf *)$1)->val.val_double);
 			$$ = (char *)tmp;
 			// 不是bool表达式

@@ -25,7 +25,12 @@ int main(int argc, char *argv[]){
 //		analyse(forest->tree);
 //		displayTable(table);
 		displayMidcode();
-		storeMidcode();
+		int i = strlen(argv[1]);
+		for (i--; i >= 0; i --)
+			if (argv[1][i] == '.') break;
+		memset(argv[1]+i+1, 0, strlen(argv[1])-i-1);
+		sprintf(argv[1]+i+1, "%s", "ir");
+		storeMidcode(argv[1]);
 
 //		analyse(forest->tree);
 		destroyForest();
