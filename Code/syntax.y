@@ -902,7 +902,7 @@ Exp		: Exp ASSIGNOP Exp {
 			printExp(&e2);
 			char *dollar = getTempVar();
 			Midcode *code = newMidcode();
-			sprintf(code->sentence, "%s := %s * %s\n", dollar, e1->name, e2->name);
+			sprintf(code->sentence, "%s := %s / %s\n", dollar, e1->name, e2->name);
 			cpy(e1->name, dollar);
 			$$ = (char *)e1;
 			// 不是bool表达式
