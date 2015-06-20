@@ -121,11 +121,14 @@ char *get_reg(char *var);
 // 找到一个空的寄存器，然后返回这个寄存器
 // 然后返回这个寄存器
 char *find_reg();
+// 这个函数获取一个变量在内存里的地址（相对于fp的偏移）
+char *get_addr(char *var);
 //---------------以上寄存器对应的函数---------------------
 
 // 这个函数把生成的机器指令写入.s文件
 void store_exe_code(char *filename);
 exe_code *new_ecode(base_block *block);
+void init_ecode();
 void init_generate();
 //---------------以上文件写入和展示对应的函数------------------
 #endif

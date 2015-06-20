@@ -46,11 +46,13 @@ int main(int argc, char *argv[]){
 //		analyse(forest->tree);
 
 		// 把机器代码保存到.s文件里
-/*
+
    		init_ecode();
+		generate();
    		memset(argv[1]+i+1, 0, strlen(argv[1])-i-1);
 		sprintf(argv[1]+i+1, "%s", "s");
-		store_exe_code(argv[1]);*/
+		store_exe_code(argv[1]);
+
 		destroyForest();
 	}
 	else printf("Usage: ./paser *.cmm\n");
