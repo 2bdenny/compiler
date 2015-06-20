@@ -3,14 +3,24 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-Item *table = NULL;
-Item *tail = NULL;
-Item *scope = NULL;
-int count = 0;
-
-Tree *forest = NULL;
-int getError = 0;
-
+void init_var(){
+	table = NULL;
+	tail = NULL;
+	scope = NULL;
+	count = 0;
+	forest = NULL;
+	getError = 0;
+	tagM = NULL;
+	anonymous = 0;
+	temp_type = NULL;
+	temp_var_num = 0;
+	file = NULL;
+	line_num = 0;
+	codes = NULL;
+	code_tail = NULL;
+	tag_num = 0;
+	isBoolean = false;
+}
 // 制造一个词
 Leaf *makeLeaf(int line, int valno, int terminal, char *token, Value val){
 	Leaf *x = (Leaf *)malloc(sizeof(Leaf));
@@ -372,15 +382,11 @@ Item *getStructMember(char *item){
 	}
 	return result;
 }
-//匿名结构体的结构体名
-int anonymous = 0;
 char *getAnonymousStruct(){
 	char *name = (char *)malloc(ID_MAX_LEN*sizeof(char));
 	sprintf(name, "%d_", anonymous++);
 	return name;
 }
-//临时保存的类型
-Item *temp_type = NULL;
 //获取一个结构体所占的空间大小
 int getStructSize(Item *it){
 	if (it == NULL) return -1;
@@ -438,8 +444,6 @@ void saveTempType(Item *tp){
 Item *getTempType(){
 	return temp_type;
 }
-//生成临时变量
-int temp_var_num = 0;
 char *getTempVar(){
 	char *name = (char *)malloc(ID_MAX_LEN*sizeof(char));
 	memset(name, 0, ID_MAX_LEN);
@@ -503,18 +507,6 @@ void initTable(){
 	insertTable(arg);
 }
 
-// 最后写入的文件的文件指针
-FILE *file = NULL;
-
-// 行号
-int line_num = 0;
-
-// 所有的中间代码保存这个链表里 
-Midcode *codes = NULL;
-Midcode *code_tail = NULL;
-
-// label的number不会重复
-int tag_num = 0;
 // 一条中间代码
 Midcode *newMidcode(){
 	Midcode *code = (Midcode *)malloc(sizeof(Midcode));
@@ -540,8 +532,6 @@ codeItem *newcodeItem(){
 	return item;
 }
 
-// 当前的M标号，存储的应该是LABEL M语句的M的名字
-char *tagM = NULL;
 void setM(char *m){
 	if (tagM == NULL) tagM = (char *)malloc(ID_MAX_LEN);
 	memset(tagM, 0, ID_MAX_LEN);
@@ -648,7 +638,6 @@ void displayItemList(Item *it){
 	displaycodeItem(it->nextlist);
 }
 
-int isBoolean = false;
 int getBoolean(){
 	return isBoolean;
 }

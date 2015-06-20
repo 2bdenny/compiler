@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 // 定义语法树常量
 #define LEAF_LEN sizeof(struct tNode)
@@ -37,6 +38,7 @@
 
 // 宏定义函数
 #define max(a, b) ((a) > (b)? (a):(b))
+#define min(a, b) ((a) > (b)? (b):(a))
 
 // 词法分析保存值/变量名
 struct value{
@@ -116,6 +118,35 @@ typedef struct item{
 }Item;
 
 
+Item *table;
+Item *tail;
+Item *scope;
+int count;
+
+Tree *forest;
+int getError;
+
+// 当前的M标号，存储的应该是LABEL M语句的M的名字
+char *tagM;
+//匿名结构体的结构体名
+int anonymous;
+//临时保存的类型
+Item *temp_type;
+//生成临时变量
+int temp_var_num;
+// 最后写入的文件的文件指针
+FILE *file;
+
+// 行号
+int line_num;
+
+// 所有的中间代码保存这个链表里 
+Midcode *codes;
+Midcode *code_tail;
+
+// label的number不会重复
+int tag_num;
+int isBoolean;
 // 制造一个叶子
 Leaf *makeLeaf(int line, int valno, int terminal, char *token, Value val);
 
@@ -253,4 +284,6 @@ void displayItemList(Item *it);
 // 保存当前的exp是不是bool表达式，是返回1，不是返回0
 int getBoolean();
 void setBoolean(int b);
+void init_var();
+
 #endif
