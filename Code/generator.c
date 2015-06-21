@@ -167,7 +167,7 @@ void add_var(char *var, int size){
 	}
 }
 void add_arg(char *reg){
-	printf("\t\t\tadd_arg %s\n", reg);
+//	printf("\t\t\tadd_arg %s\n", reg);
 /*	if (arg_count < 4){
 		exe_code *tmp = new_ecode(NULL);
 		sprintf(tmp->sentence, "\tmove $a%d, %s\n", arg_count, reg);
@@ -262,7 +262,8 @@ void generate_block(base_block *block){
 	int i;
 	Midcode *trace = block->start;
 	for (i = 0; i < block->count; i++){
-		printf("%s\n", trace->sentence);
+		init_regs();
+//		printf("%s\n", trace->sentence);
 		if (trace == NULL){ 
 			printf("error: generate code trace=NULL\n");
 		}
@@ -280,58 +281,80 @@ void generate_block(base_block *block){
 			char *var2 = get_word(trace->sentence, 2);
 			if (var1[0] == '*'){
 				if (var2[0] == '#'){	// *x = #1
-					char *reg1 = get_reg(var1+1);
 					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var2+1);
+					sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 					tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt1, reg1);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 				}
 				else if (var2[0] == '*'){	// *x = *y
-					char *reg1 = get_reg(var1+1);
-					char *reg2 = get_reg(var2+1);
-					char *regt = find_reg();
+					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt, reg2);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 					tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 				}
 				else if (var2[0] == '&'){	// *x = &y
-					char *addr2 = get_addr(var2+1);
-					char *reg1 = get_reg(var1+1);
+					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", addr2, reg1);
+					sprintf(tmp->sentence, "\tla %s, %s\n", regt2, var2+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 				}
 				else {	// *x = y
-					char *reg1 = get_reg(var1+1);
-					char *reg2 = get_reg(var2);
+					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", reg2, reg1);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 				}
 			}
 			else{
 				if (var2[0] == '#'){	// x = #1
 					char *reg1 = get_reg(var1);
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tli %s, %s\n", reg1, var2+1);
+					sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 				}
 				else if (var2[0] == '*'){	// x = *y
 					char *reg1 = get_reg(var1);
-					char *reg2 = get_reg(var2+1);
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", reg1, reg2);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 				}
 				else if (var2[2] == '&'){	// x = &y
 					char *addr2 = get_addr(var2+1);
-					char *reg1 = get_reg(var1);
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tli %s, %s\n", reg1, addr2);
+					sprintf(tmp->sentence, "\tla %s, %s\n", regt2, var2+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 				}
 				else {	// x = y
-					char *reg1 = get_reg(var1);
-					char *reg2 = get_reg(var2);
+					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tmove %s, %s\n", reg1, reg2);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var2);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tsw %s, %s\n", regt1, var1);
 				}
 			}
 		}
@@ -342,128 +365,186 @@ void generate_block(base_block *block){
 			if (var1[0] == '*'){
 				if (var2[0] == '#'){
 					if (var3[0] == '#'){	// *x = #1 + #2
-						char *reg1 = get_reg(var1+1);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt, var2+1, var3+1);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 					else {	// *x = #1 + y
-						char *reg1 = get_reg(var1+1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt, reg2+1, reg3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt2, regt3, var2+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt1, var1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 				else {
 					if (var3[0] == '#'){	// *x = y + #1
-						char *reg1 = get_reg(var1);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt, var2, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt2, regt2, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt1, var1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 					else {	// *x = y + z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", regt, reg2, var3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt1, var1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 			}
 			else {
 				if (var2[0] == '*'){
-					if (var3[0] == '*'){	// x = *y + *2
+					if (var3[0] == '*'){	// x = *y + *z
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", reg1, regt2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else if (var3[0] == '#'){	// x = *y + #2
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", reg1, regt2, var3+1);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt2, regt2, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else {	// x = *y + z
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", reg1, regt2, reg3);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 				else if (var2[0] == '#'){
 					if (var3[0] == '*'){	// x = #2 + *y
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", reg1, regt3, var2+1);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt3, regt3, var2+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt3, var1);
 					}
 					else if (var3[0] == '#'){	// x = #1 + #2
-						char *reg1 = get_reg(var1);
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", reg1, var2+1, var3+1);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt3, regt3, var2+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt3, var1);
 					}
 					else {	// x = #1 + y
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3);
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", reg1, reg3, var2+1);
+						sprintf(tmp->sentence, "lw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt3, regt3, var2+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt3, var1);
 					}
 				}
 				else {
 					if (var3[0] == '*'){	// x = y + *z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", reg1, reg2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else if (var3[0] == '#'){	// x = y + #2
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", reg1, reg2, var3+1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\taddi %s, %s, %s\n", regt2, regt2, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else {	// x = y + z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", reg1, reg2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tadd %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 			}
@@ -475,133 +556,203 @@ void generate_block(base_block *block){
 			if (var1[0] == '*'){
 				if (var2[0] == '#'){
 					if (var3[0] == '#'){	// *x = #1 - #2
-						char *reg1 = get_reg(var1+1);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, -%s\n", regt, var2+1, var3+1);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 					else {	// *x = #1 - y
-						char *reg1 = get_reg(var1+1);
-						char *reg3 = get_reg(var3);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tli %s, %s", regt2, var2+1);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt, regt2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 				else {
 					if (var3[0] == '#'){	// *x = y - #1
-						char *reg1 = get_reg(var1);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, -%s\n", regt, var2, var3+1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 					else {	// *x = y - z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
-						char *regt = find_reg();
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt, reg2, var3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 			}
 			else {
 				if (var2[0] == '*'){
 					if (var3[0] == '*'){	// x = *y - *z
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", reg1, regt2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else if (var3[0] == '#'){	// x = *y - #2
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, -%s\n", reg1, regt2, var3+1);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else {	// x = *y - z
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", reg1, regt2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 				else if (var2[0] == '#'){
 					if (var3[0] == '*'){	// x = #2 - *y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
-						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", reg1, regt2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else if (var3[0] == '#'){	// x = #1 - #2
-						char *reg1 = get_reg(var1);
-						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, -%s\n", reg1, var2+1, var3+1);
-					}
-					else {	// x = #1 - y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", reg1, regt2, reg3);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
+					}
+					else {	// x = #1 - y
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
+						exe_code *tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 				else {
 					if (var3[0] == '*'){	// x = y - *z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", reg1, reg2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else if (var3[0] == '#'){	// x = y - #2
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\taddi %s, %s, -%s\n", reg1, reg2, var3+1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 					else {	// x = y - z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", reg1, reg2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsub %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 			}
@@ -612,9 +763,8 @@ void generate_block(base_block *block){
 			char *var3 = get_word(trace->sentence, 4);
 			if (var1[0] == '*'){
 				if (var2[0] == '#'){
-					if (var3[0] == '#'){	// *x = #1 * #2
-						char *reg1 = get_reg(var1+1);
-						char *regt = find_reg();
+					if (var3[0] == '#'){	// *x = #1 - #2
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
@@ -622,145 +772,195 @@ void generate_block(base_block *block){
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt, regt2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
-					else {	// *x = #1 * y
-						char *regt = find_reg();
+					else {	// *x = #1 - y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1+1);
-						char *reg3 = get_reg(var3);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt, regt2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 				else {
-					if (var3[0] == '#'){	// *x = y * #1
-						char *regt = find_reg();
+					if (var3[0] == '#'){	// *x = y - #1
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
 						exe_code *tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt, reg2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
-					else {	// *x = y * z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
-						char *regt = find_reg();
+					else {	// *x = y - z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt, reg2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 			}
 			else {
 				if (var2[0] == '*'){
-					if (var3[0] == '*'){	// x = *y * *2
+					if (var3[0] == '*'){	// x = *y - *z
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, regt2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else if (var3[0] == '#'){	// x = *y * #2
+					else if (var3[0] == '#'){	// x = *y - #2
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, regt2, regt3);
-					}
-					else {	// x = *y + z
-						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3);
-						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, regt2, reg3);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
+					}
+					else {	// x = *y - z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
+						exe_code *tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 				else if (var2[0] == '#'){
-					if (var3[0] == '*'){	// x = #2 * *y
+					if (var3[0] == '*'){	// x = #2 - *y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, regt2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else if (var3[0] == '#'){	// x = #1 * #2
+					else if (var3[0] == '#'){	// x = #1 - #2
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, regt2, regt3);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else {	// x = #1 * y
+					else {	// x = #1 - y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, regt2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 				else {
-					if (var3[0] == '*'){	// x = y * *z
+					if (var3[0] == '*'){	// x = y - *z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, reg2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else if (var3[0] == '#'){	// x = y * #2
+					else if (var3[0] == '#'){	// x = y - #2
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
 						exe_code *tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, reg2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else {	// x = y * z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
+					else {	// x = y - z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", reg1, reg2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 			}
@@ -771,129 +971,156 @@ void generate_block(base_block *block){
 			char *var3 = get_word(trace->sentence, 4);
 			if (var1[0] == '*'){
 				if (var2[0] == '#'){
-					if (var3[0] == '#'){	// *x = #1 / #2
-						char *reg1 = get_reg(var1+1);
-						char *regt = find_reg();
+					if (var3[0] == '#'){	// *x = #1 - #2
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", regt);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
-					else {	// *x = #1 / y
-						char *reg1 = get_reg(var1+1);
-						char *reg3 = get_reg(var3);
-						char *regt = find_reg();
+					else {	// *x = #1 - y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", regt);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 				else {
-					if (var3[0] == '#'){	// *x = y / #1
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
+					if (var3[0] == '#'){	// *x = y - #1
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *regt = find_reg();
 						exe_code *tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", reg2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", regt);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
-					else {	// *x = y / z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
-						char *regt = find_reg();
+					else {	// *x = y - z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", reg2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", regt);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt, reg1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
 					}
 				}
 			}
 			else {
 				if (var2[0] == '*'){
-					if (var3[0] == '*'){	// x = *y / *2
+					if (var3[0] == '*'){	// x = *y - *z
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else if (var3[0] == '#'){	// x = *y / #2
+					else if (var3[0] == '#'){	// x = *y - #2
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else {	// x = *y / z
+					else {	// x = *y - z
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2+1);
-						char *reg3 = get_reg(var3);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 				else if (var2[0] == '#'){
-					if (var3[0] == '*'){	// x = #2 / *y
+					if (var3[0] == '*'){	// x = #2 - *y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else if (var3[0] == '#'){	// x = #1 / #2
+					else if (var3[0] == '#'){	// x = #1 - #2
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
@@ -901,52 +1128,73 @@ void generate_block(base_block *block){
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else {	// x = #1 + y
+					else {	// x = #1 - y
+						char *regt1 = find_reg();
 						char *regt2 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg3 = get_reg(var3);
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 				else {
-					if (var3[0] == '*'){	// x = y / *z
+					if (var3[0] == '*'){	// x = y - *z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3+1);
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", reg2, regt3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt3, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else if (var3[0] == '#'){	// x = y / #2
+					else if (var3[0] == '#'){	// x = y - #2
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
 						char *regt3 = find_reg();
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
 						exe_code *tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tli %s, %s\n", regt3, var3+1);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", reg2, regt3);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
-					else {	// x = y + z
-						char *reg1 = get_reg(var1);
-						char *reg2 = get_reg(var2);
-						char *reg3 = get_reg(var3);
+					else {	// x = y - z
+						char *regt1 = find_reg();
+						char *regt2 = find_reg();
+						char *regt3 = find_reg();
 						exe_code *tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tdiv %s, %s\n", reg2, reg3);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tmflo %s\n", reg1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tdiv %s, %s\n", regt2, regt3);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tmflo %s\n", regt2);
+						tmp = new_ecode(block);
+						sprintf(tmp->sentence, "\tsw %s, %s\n", regt2, var1);
 					}
 				}
 			}
@@ -962,14 +1210,16 @@ void generate_block(base_block *block){
 			char *label = get_word(trace->sentence, 5);
 			if (var1[0] == '*'){
 				if (var2[0] == '*'){ //*x == *y
-					char *reg1 = get_reg(var1+1);
-					char *reg2 = get_reg(var2+1);
 					char *regt1 = find_reg();
 					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, reg1);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
 					tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, regt1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
 					tmp = new_ecode(block);
 					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
 					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, regt2, label);
@@ -980,11 +1230,12 @@ void generate_block(base_block *block){
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 				else if (var2[0] == '#'){	// *x == #y
-					char *reg1 = get_reg(var1+1);
 					char *regt1 = find_reg();
 					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, reg1);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, regt1);
 					tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 					tmp = new_ecode(block);
@@ -997,30 +1248,34 @@ void generate_block(base_block *block){
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 				else {	// *x == y
-					char *reg1 = get_reg(var1+1);
-					char *reg2 = get_reg(var2+1);
 					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, reg1);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
 					tmp = new_ecode(block);
-					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", regt1, reg2, label);
+					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, regt1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+					tmp = new_ecode(block);
+					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", regt1, regt2, label);
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 			}
 			else if (var1[0] == '#'){
 				if (var2[0] == '*'){	// #x == *y
-					char *reg2 = get_reg(var2+1);
 					char *regt1 = find_reg();
 					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var1+1);
 					tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
 					tmp = new_ecode(block);
 					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
 					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, regt2, label);
@@ -1035,6 +1290,7 @@ void generate_block(base_block *block){
 					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var1+1);
+					tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 					tmp = new_ecode(block);
 					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
@@ -1046,60 +1302,71 @@ void generate_block(base_block *block){
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 				else {	// #1 == y
-					char *reg2 = get_reg(var2+1);
 					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var1);
+					sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var1+1);
 					tmp = new_ecode(block);
-					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", regt1, reg2, label);
-					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", regt1, reg2, label);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+					tmp = new_ecode(block);
+					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", regt1, regt2, label);
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 			}
 			else{
 				if (var2[0] == '*'){	// x == *y
-					char *reg1 = get_reg(var1);
-					char *reg2 = get_reg(var2+1);
+					char *regt1 = find_reg();
 					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, reg2);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1);
 					tmp = new_ecode(block);
-					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", reg1, regt2, label);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2+1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt2, regt2);
+					tmp = new_ecode(block);
+					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", regt1, regt2, label);
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 				else if (var2[0] == '#'){	//x == #1
-					char *reg1 = get_reg(var1);
+					char *regt1 = find_reg();
 					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1);
+					tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tli %s, %s\n", regt2, var2+1);
 					tmp = new_ecode(block);
-					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", reg1, regt2, label);
-					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", reg1, regt2, label);
+					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", regt1, regt2, label);
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 				else {	// x == y
-					char *reg1 = get_reg(var1);
-					char *reg2 = get_reg(var2);
+					char *regt1 = find_reg();
+					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
-					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", reg1, reg2, label);
-					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", reg1, reg2, label);
-					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", reg1, reg2, label);
-					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", reg1, reg2, label);
-					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", reg1, reg2, label);
-					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", reg1, reg2, label);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1);
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
+					tmp = new_ecode(block);
+					if (memcmp(op, "==", 2) == 0) sprintf(tmp->sentence, "\tbeq %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "!=", 2) == 0) sprintf(tmp->sentence, "\tbne %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">", 1) == 0) sprintf(tmp->sentence, "\tbgt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<", 1) == 0) sprintf(tmp->sentence, "\tblt %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, ">=", 2) == 0) sprintf(tmp->sentence, "\tbge %s, %s, %s\n", regt1, regt2, label);
+					else if (memcmp(op, "<=", 2) == 0) sprintf(tmp->sentence, "\tble %s, %s, %s\n", regt1, regt2, label);
 					else sprintf(tmp->sentence, "\t# when if, error occurred\n");
 				}
 			}
@@ -1146,7 +1413,7 @@ void generate_block(base_block *block){
 		}
 		else if (isARG(trace)){
 			char *var1 = get_word(trace->sentence, 1);
-			printf("\t\t\t\t arg %s\n", var1);
+//			printf("\t\t\t\t arg %s\n", var1);
 			if (var1[0] == '*'){
 				char *reg1 = get_reg(var1+1);
 				char *regt1 = find_reg();
@@ -1364,7 +1631,7 @@ void init_generate(){
 	tmp = new_ecode(NULL);
 	sprintf(tmp->sentence, ".globl main\n");
 
-//	init_all_var();
+	init_all_var();
 
 	tmp = new_ecode(NULL);
 	sprintf(tmp->sentence, ".text\n");
@@ -1442,6 +1709,7 @@ char *find_reg(){
 	for (i = 0; i < 20; i ++){
 		if (regs[i].list == NULL){
 			memcpy(result, regs[i].name, strlen(regs[i].name));
+			regs[i].list = (var_list_node *)malloc(sizeof(var_list_node));
 			return result;
 		}
 	}
@@ -1586,8 +1854,9 @@ void init_all_var(){
 		else if (isPARAM(trace)){
 		}
 		else if (isREAD(trace)){
-			char *var1 = get_word(trace->sentence, 0);
-			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
+			char *var1 = get_word(trace->sentence, 1);
+			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&' && memcmp(var1, "READ", 4) != 0){
 				if (!is_var_exist(var1)){
 					exe_code *tmp = new_ecode(NULL);
 					sprintf(tmp->sentence, "%s: .word 0\n", var1);
@@ -1597,5 +1866,9 @@ void init_all_var(){
 		}
 		else if (isWRITE(trace)){
 		}
+		else {
+			printf("error classify\n");
+		}
+		trace = trace->next;
 	}
 }

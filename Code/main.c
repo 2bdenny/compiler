@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
 
 		// 划分基本块
 		part_base_block();
-		display_base_block();
+//		display_base_block();
 
 		/*char *x = "hello, every one, i'm monkey coder, the weather of today is good\n";
 		int thex = 0;
