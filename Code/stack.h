@@ -13,13 +13,13 @@
 #define CONTENT_LEN 33
 
 typedef struct stackNode{
-	void *content;
+	int content;
 	struct stackNode *next;
 } sNode;
 
-bool push(void *x);
+bool push(int x);
 bool pop();
-void *top();
+int top();
 bool isEmpty();
 bool isFull();
 int size();

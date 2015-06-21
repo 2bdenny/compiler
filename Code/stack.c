@@ -3,7 +3,7 @@
 sNode *tableStack = NULL;
 int stackSize = 0;
 
-bool push(void *x){
+bool push(int x){
 	if (isFull()){
 		printf("stack already Full\n");
 		return false;
@@ -33,10 +33,10 @@ bool pop(){
 	}
 }
 
-void *top(){
+int top(){
 	if (isEmpty()){
 		printf("stack is NULL\n");
-		return NULL;
+		return -1;
 	}
 	else{
 //		char *result = (char *)malloc(strlen(tableStack->content)+1);

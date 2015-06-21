@@ -1,7 +1,6 @@
 #include "generator.h"
 #include "GrammarTree.h"
 
-int arg_count = 0;
 void init_block(){
 	blocks = NULL;
 	block_tail = NULL;
@@ -167,27 +166,27 @@ void add_var(char *var, int size){
 	}
 }
 void add_arg(char *reg){
-//	printf("\t\t\tadd_arg %s\n", reg);
-/*	if (arg_count < 4){
-		exe_code *tmp = new_ecode(NULL);
-		sprintf(tmp->sentence, "\tmove $a%d, %s\n", arg_count, reg);
-	}
-	else {*/
-		exe_code *tmp = new_ecode(NULL);
-		sprintf(tmp->sentence, "\tmove $sp, %s\n", reg);
-		tmp = new_ecode(NULL);
-		sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
-//	}
-//	arg_count ++;
+	exe_code *tmp = new_ecode(NULL);
+	sprintf(tmp->sentence, "\tsw %s, 0($sp)\n", reg);
+	tmp = new_ecode(NULL);
+	sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
 }
 void get_arg(char *reg){
 //	if (arg_count >= 4){
+//		printf("can't deal with param > 4\n");
+		char *regt = find_reg();
 		exe_code *tmp = new_ecode(NULL);
-		sprintf(tmp->sentence, "\tmove %s, $sp\n", reg);
+		sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 		tmp = new_ecode(NULL);
-		sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
-//	}
-/*	else {
+		sprintf(tmp->sentence, "\tlw $fp, 0($sp)\n");
+		tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\tlw %s, 4($sp)\n", regt);
+		tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\tsw $fp, 4($sp)\n");
+		tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\tsw %s, %s\n", regt, reg);
+/*	}
+	else {
 		exe_code *tmp = new_ecode(NULL);
 		sprintf(tmp->sentence, "\tmove %s, $a%d\n", reg, arg_count);
 	}
@@ -275,6 +274,10 @@ void generate_block(base_block *block){
 		else if (isFUNCTION(trace)){	// FUNCTION x :
 			exe_code *tmp = new_ecode(block);
 			sprintf(tmp->sentence, "%s:\n", get_word(trace->sentence, 1));
+			tmp = new_ecode(block);
+			sprintf(tmp->sentence, "sw $ra, 0($sp)\n");
+			tmp = new_ecode(block);
+			sprintf(tmp->sentence, "addi $sp, $sp, -4\n");
 		}
 		else if (isASSIGN(trace)){	// :=
 			char *var1 = get_word(trace->sentence, 0);
@@ -956,7 +959,7 @@ void generate_block(base_block *block){
 						exe_code *tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tlw %s, %s\n", regt2, var2);
 						tmp = new_ecode(block);
-						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3+1);
+						sprintf(tmp->sentence, "\tlw %s, %s\n", regt3, var3);
 						tmp = new_ecode(block);
 						sprintf(tmp->sentence, "\tmul %s, %s, %s\n", regt2, regt2, regt3);
 						tmp = new_ecode(block);
@@ -1373,70 +1376,71 @@ void generate_block(base_block *block){
 		}
 		else if (isRETURN(trace)){
 			char *var1 = get_word(trace->sentence, 1);
-			if (var1[0] == '*'){
-				char *reg1 = get_reg(var1+1);
+			if (var1[0] == '*'){ // return *x
 				char *regt1 = find_reg();
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, reg1);
+				sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, regt1);
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tmove $v0, %s\n", regt1);
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tjr $ra\n");
-			}
-			else if (var1[0] == '&'){
-				char *addr1 = get_addr(var1+1);
-				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tmove $v0, %s\n", addr1);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
-			else if (var1[0] == '#'){
+			else if (var1[0] == '&'){ // return &x
+				exe_code *tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tla $v0, %s\n", var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tjr $ra\n");
+			}
+			else if (var1[0] == '#'){// return #x
 				exe_code *tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tli $v0, %s\n", var1+1);
 				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
+				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
-			else {
-				char *reg1 = get_reg(var1);
+			else {// return x
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tmove $v0, %s\n", reg1);
+				sprintf(tmp->sentence, "\tlw $v0, %s\n", var1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
 		}
 		else if (isDEC(trace)){
-			char var1[ID_MAX_LEN];
-			memset(var1, 0, ID_MAX_LEN);
-			int size;
-			sscanf(trace->sentence, "DEC %s %d\n", var1, &size);
-			add_var(var1, size);
 		}
 		else if (isARG(trace)){
 			char *var1 = get_word(trace->sentence, 1);
-//			printf("\t\t\t\t arg %s\n", var1);
-			if (var1[0] == '*'){
-				char *reg1 = get_reg(var1+1);
+			if (var1[0] == '*'){	// arg *x
 				char *regt1 = find_reg();
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, reg1);
+				sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, regt1);
 				tmp = new_ecode(block);
 				add_arg(regt1);
 			}
-			else if (var1[0] == '&'){
-				char *addr1 = get_addr(var1+1);
-				add_arg(addr1);
+			else if (var1[0] == '&'){//arg &x
+				char *regt1 = find_reg();
+				exe_code *tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tla %s, %s\n", regt1, var1+1);
+				add_arg(regt1);
 			}
-			else if (var1[0] == '#'){
+			else if (var1[0] == '#'){//arg #x
 				char *regt1 = find_reg();
 				exe_code *tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var1+1);
 				add_arg(regt1);
 			}
-			else {
-				char *reg1 = get_reg(var1);
+			else {//arg x
 				char *regt1 = find_reg();
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tmove %s, %s\n", regt1, reg1);
+				sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1);
 				add_arg(regt1);
 			}
 		}
@@ -1444,31 +1448,41 @@ void generate_block(base_block *block){
 			char *label = get_word(trace->sentence, 3);
 			char *var1 = get_word(trace->sentence, 0);
 			exe_code *tmp = new_ecode(block);
+//			sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
+//			tmp = new_ecode(block);
+//			sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
+//			tmp = new_ecode(block);
+/*			sprintf(tmp->sentence, "\tmove $fp, $sp\n");
+			tmp = new_ecode(block);
+			sprintf(tmp->sentence, "\taddi $sp, $sp, -64\n");
+			tmp = new_ecode(block);
+			sprintf(tmp->sentence, "\tsw $fp, 0($sp)\n");//栈的大小，16k
+			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
-			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
-			tmp = new_ecode(block);
+			tmp = new_ecode(block);*/
 			sprintf(tmp->sentence, "\tjal %s\n", label);
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 			tmp = new_ecode(block);
-			if (var1[0] == '*'){
-				char *reg1 = get_reg(var1+1);
-				sprintf(tmp->sentence, "\tsw $v0, 0(%s)\n", reg1);
+			sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
+			tmp = new_ecode(block);
+			if (var1[0] == '*'){//*x = call f
+				char *regt1 = find_reg();
+				sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tsw $v0, 0(%s)\n", regt1);
 			}
-			else {
-				char *reg1 = get_reg(var1);
-				sprintf(tmp->sentence, "\tmove %s, $v0\n", reg1);
+			else {//x=call f
+				sprintf(tmp->sentence, "\tsw $v0, %s\n", var1);
 			}
 		}
 		else if (isPARAM(trace)){
 			char *var1 = get_word(trace->sentence, 1);
-			char *reg1 = get_reg(var1);
-			get_arg(reg1);
+			get_arg(var1);
 		}
 		else if (isREAD(trace)){
-			char *var1 = get_word(trace->sentence, 0);
-
+			char *var1 = get_word(trace->sentence, 1);
+			
 			exe_code *tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
 			tmp = new_ecode(block);
@@ -1478,29 +1492,84 @@ void generate_block(base_block *block){
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
 			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
-			if (var1[0] == '*'){
-				char *reg1 = get_reg(var1+1);
+			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");;
+			if (var1[0] == '*'){ //read *x
+				char *regt1 = find_reg();
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tsw $v0, 0(%s)\n", reg1);
+				sprintf(tmp->sentence, "\tlw %s, %s\n", regt1, var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tsw $v0, 0(%s)\n", regt1);
 			}
-			else {
-				char *reg1 = get_reg(var1);
+			else {// read x
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tmove %s, $v0\n", reg1);
+				sprintf(tmp->sentence, "\tsw $v0, %s\n", var1);
 			}
 		}
-		else if (isWRITE(trace)){
-			exe_code *tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
-			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
-			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\tjal write\n");
-			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
-			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
+		else if (isWRITE(trace)){// write *x
+			char *var1 = get_word(trace->sentence, 1);
+
+			if (var1[0] == '*'){
+				char *regt = find_reg();
+				exe_code *tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw %s, %s\n", regt, var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw $a0, 0(%s)\n", regt);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tjal write\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");;
+			}
+			else if(var1[0] == '#'){// write #x
+				char *regt = find_reg();
+				exe_code *tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tli $a0, %s\n", var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tjal write\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");;
+			}
+			else if(var1[0] == '&') {//write &x
+				char *regt = find_reg();
+				exe_code *tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tla $a0, %s\n", var1+1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tjal write\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");;
+			}
+			else {//write x
+				char *regt = find_reg();
+				exe_code *tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw $a0, %s\n", var1);
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tjal write\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
+				tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");;
+			}
 		}
 		else {
 			printf("can't classify: %s\n", trace->sentence);
@@ -1790,36 +1859,85 @@ void init_all_var(){
 		}
 		else if (isASSIGN(trace)){
 			char *var1 = get_word(trace->sentence, 0);
+			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
 			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
 				if (!is_var_exist(var1)){
 					exe_code *tmp = new_ecode(NULL);
 					sprintf(tmp->sentence, "%s: .word 0\n", var1);
 					add_var(var1, 4);
+				}
+			}
+			char *var2 = get_word(trace->sentence, 2);
+			if (var2[strlen(var2)-1] == '\n') var2[strlen(var2)-1] = 0;
+			if (var2[0] != '*' && var2[0] != '#' && var2[0] != '&'){
+				if (!is_var_exist(var2)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var2);
+					add_var(var2, 4);
 				}
 			}
 		}
 		else if (isPLUS(trace)){
 			char *var1 = get_word(trace->sentence, 0);
+			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
 			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
 				if (!is_var_exist(var1)){
 					exe_code *tmp = new_ecode(NULL);
 					sprintf(tmp->sentence, "%s: .word 0\n", var1);
 					add_var(var1, 4);
+				}
+			}
+			char *var2 = get_word(trace->sentence, 2);
+			if (var2[strlen(var2)-1] == '\n') var2[strlen(var2)-1] = 0;
+			if (var2[0] != '*' && var2[0] != '#' && var2[0] != '&'){
+				if (!is_var_exist(var2)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var2);
+					add_var(var2, 4);
+				}
+			}
+			char *var3 = get_word(trace->sentence, 4);
+			if (var3[strlen(var3)-1] == '\n') var3[strlen(var3)-1] = 0;
+			if (var3[0] != '*' && var3[0] != '#' && var3[0] != '&'){
+				if (!is_var_exist(var3)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var3);
+					add_var(var3, 4);
 				}
 			}
 		}
 		else if (isMINUS(trace)){
 			char *var1 = get_word(trace->sentence, 0);
+			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
 			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
 				if (!is_var_exist(var1)){
 					exe_code *tmp = new_ecode(NULL);
 					sprintf(tmp->sentence, "%s: .word 0\n", var1);
 					add_var(var1, 4);
+				}
+			}
+			char *var2 = get_word(trace->sentence, 2);
+			if (var2[strlen(var2)-1] == '\n') var2[strlen(var2)-1] = 0;
+			if (var2[0] != '*' && var2[0] != '#' && var2[0] != '&'){
+				if (!is_var_exist(var2)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var2);
+					add_var(var2, 4);
+				}
+			}
+			char *var3 = get_word(trace->sentence, 4);
+			if (var3[strlen(var3)-1] == '\n') var3[strlen(var3)-1] = 0;
+			if (var3[0] != '*' && var3[0] != '#' && var3[0] != '&'){
+				if (!is_var_exist(var3)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var3);
+					add_var(var3, 4);
 				}
 			}
 		}
 		else if (isSTAR(trace)){
 			char *var1 = get_word(trace->sentence, 0);
+			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
 			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
 				if (!is_var_exist(var1)){
 					exe_code *tmp = new_ecode(NULL);
@@ -1827,14 +1945,51 @@ void init_all_var(){
 					add_var(var1, 4);
 				}
 			}
+			char *var2 = get_word(trace->sentence, 2);
+			if (var2[strlen(var2)-1] == '\n') var2[strlen(var2)-1] = 0;
+			if (var2[0] != '*' && var2[0] != '#' && var2[0] != '&'){
+				if (!is_var_exist(var2)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var2);
+					add_var(var2, 4);
+				}
+			}
+			char *var3 = get_word(trace->sentence, 4);
+			if (var3[strlen(var3)-1] == '\n') var3[strlen(var3)-1] = 0;
+			if (var3[0] != '*' && var3[0] != '#' && var3[0] != '&'){
+				if (!is_var_exist(var3)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var3);
+					add_var(var3, 4);
+				}
+			}
 		}
 		else if (isDIV(trace)){
 			char *var1 = get_word(trace->sentence, 0);
+			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
 			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
 				if (!is_var_exist(var1)){
 					exe_code *tmp = new_ecode(NULL);
 					sprintf(tmp->sentence, "%s: .word 0\n", var1);
 					add_var(var1, 4);
+				}
+			}
+			char *var2 = get_word(trace->sentence, 2);
+			if (var2[strlen(var2)-1] == '\n') var2[strlen(var2)-1] = 0;
+			if (var2[0] != '*' && var2[0] != '#' && var2[0] != '&'){
+				if (!is_var_exist(var2)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var2);
+					add_var(var2, 4);
+				}
+			}
+			char *var3 = get_word(trace->sentence, 4);
+			if (var3[strlen(var3)-1] == '\n') var3[strlen(var3)-1] = 0;
+			if (var3[0] != '*' && var3[0] != '#' && var3[0] != '&'){
+				if (!is_var_exist(var3)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var3);
+					add_var(var3, 4);
 				}
 			}
 		}
@@ -1852,6 +2007,15 @@ void init_all_var(){
 		else if (isCALL(trace)){
 		}
 		else if (isPARAM(trace)){
+			char *var1 = get_word(trace->sentence, 1);
+			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&' && memcmp(var1, "READ", 4) != 0){
+				if (!is_var_exist(var1)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var1);
+					add_var(var1, 4);
+				}
+			}
 		}
 		else if (isREAD(trace)){
 			char *var1 = get_word(trace->sentence, 1);

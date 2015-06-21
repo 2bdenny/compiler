@@ -2,11 +2,14 @@
 _prompt: .asciiz "Enter an integer:"
 _ret: .asciiz "\n"
 .globl main
-v0: .word 0
-v2: .word 0
+n: .word 0
+_v0: .word 0
+_v2: .word 0
+_v1: .word 0
 m: .word 0
 result: .word 0
-v3: .word 0
+_v3: .word 0
+_v4: .word 0
 .text
 read:
 	li $v0, 4
@@ -24,15 +27,24 @@ write:
 	move $v0, $0
 	jr $ra
 fact:
-	move $v1, $sp
-	addi $sp, $sp, -4
-	li $v1, 1
-	beq $v1, $v1, L_0
+sw $ra, 0($sp)
+addi $sp, $sp, -4
+	addi $sp, $sp, 4
+	lw $fp, 0($sp)
+	lw $v1, 4($sp)
+	sw $fp, 4($sp)
+	sw $v1, n
+
+	lw $v1, n
+	li $t0, 1
+	beq $v1, $t0, L_0
 
 	j L_1
 
 L_0:
-	move $v0, $v1
+	lw $v0, n
+
+	addi $sp, $sp, 4
 	jr $ra
 	j L_2
 
@@ -41,25 +53,29 @@ L_1:
 	li $t1, 1
 
 	sub $t0, $t0, $t1
-	sw $t0, v0
-	move $t0, $v1
-	move $sp, $t0
-	addi $sp, $sp, 4
+	sw $t0, _v0
+	lw $v1, _v0
+
+	sw $v1, 0($sp)
 	addi $sp, $sp, -4
-	sw $ra, 0($sp)
 	jal fact
 
 	addi $sp, $sp, 4
-	move $v1, $v0
+	lw $ra, 0($sp)
+	sw $v0, _v1
 	lw $t0, n
-	lw $t1, 1
+	lw $t1, _v1
 
 	mul $t0, $t0, $t1
-	sw $t0, v2
-	move $v0, $v1
+	sw $t0, _v2
+	lw $v0, _v2
+
+	addi $sp, $sp, 4
 	jr $ra
 L_2:
 main:
+sw $ra, 0($sp)
+addi $sp, $sp, -4
 	li $t0, 1
 
 	sw $t0, m
@@ -75,27 +91,29 @@ L_3:
 	jal read
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4
-	move $v1, $v0
-	lw $v1, v3
+	sw $v0, _v3
+
+	lw $v1, _v3
 
 	sw $v1, m
 L_4:
-	li $v1, 1
-	bgt $v1, $v1, L_5
+	lw $v1, m
+	li $t0, 1
+	bgt $v1, $t0, L_5
 
 	j L_6
 
 L_5:
-	move $v1, $v1
-	move $sp, $v1
-	addi $sp, $sp, 4
+	lw $v1, m
+
+	sw $v1, 0($sp)
 	addi $sp, $sp, -4
-	sw $ra, 0($sp)
 	jal fact
 
 	addi $sp, $sp, 4
-	move $v1, $v0
-	lw $v1, v4
+	lw $ra, 0($sp)
+	sw $v0, _v4
+	lw $v1, _v4
 
 	sw $v1, result
 	j L_7
@@ -105,9 +123,12 @@ L_6:
 
 	sw $v1, result
 L_7:
-	move $v1, $v1
-	move $sp, $v1
-	addi $sp, $sp, 4
+	lw $v1, result
+
+	sw $v1, 0($sp)
+	addi $sp, $sp, -4
+	lw $a0, result
+
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
 	jal write
@@ -116,5 +137,6 @@ L_7:
 L_8:
 	li $v0, 0
 
+	addi $sp, $sp, 4
 	jr $ra
 L_9:

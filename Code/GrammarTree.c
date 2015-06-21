@@ -447,7 +447,7 @@ Item *getTempType(){
 char *getTempVar(){
 	char *name = (char *)malloc(ID_MAX_LEN*sizeof(char));
 	memset(name, 0, ID_MAX_LEN);
-	sprintf(name, "v%d", temp_var_num++);
+	sprintf(name, "_v%d", temp_var_num++);
 	return name;
 }
 //假如是函数调用或者数组成员，需要做一些预处理

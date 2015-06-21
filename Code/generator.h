@@ -1,6 +1,7 @@
 #ifndef GENERATOR_H_
 #define GENERATOR_H_
 #include "GrammarTree.h"
+#include "stack.h"
 
 // 假设一句句子最多有29个空格
 #define MAX_WORDS 30
@@ -147,6 +148,7 @@ void add_var_reg(var_store *var, char *reg);
 var_store *new_var();
 // 将var加到reg的变量列表里
 void add_reg_var(char *reg, char *var);
+
 //---------------以上寄存器对应的函数---------------------
 
 // 这个函数把生成的机器指令写入.s文件
