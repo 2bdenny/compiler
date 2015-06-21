@@ -29,6 +29,7 @@ typedef struct reg_store_{
 
 // 一个变量存储的所有位置的一个位置
 typedef struct var_addr_list_node_ {
+	int fpoffset;
 	char addr[ID_MAX_LEN];	//存储位置
 	struct var_addr_list_node_ *next;
 } addr_list_node;
@@ -123,6 +124,16 @@ char *get_reg(char *var);
 char *find_reg();
 // 这个函数获取一个变量在内存里的地址（相对于fp的偏移）
 char *get_addr(char *var);
+// 这个函数初始化所有的寄存器
+void init_regs();
+// 这个函数初始化所有的全局变量
+void init_vars();
+// 这个函数增加一个全局变量
+void add_var(char *var, int size);
+// 增加一个arg
+void add_arg(char *reg);
+// 读出一个arg
+void get_arg(char *reg);
 //---------------以上寄存器对应的函数---------------------
 
 // 这个函数把生成的机器指令写入.s文件
