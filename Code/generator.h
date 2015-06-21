@@ -29,16 +29,20 @@ typedef struct reg_store_{
 
 // 一个变量存储的所有位置的一个位置
 typedef struct var_addr_list_node_ {
-	int fpoffset;
 	char addr[ID_MAX_LEN];	//存储位置
 	struct var_addr_list_node_ *next;
 } addr_list_node;
 
 // 一个变量的存储位置的定义
 typedef struct var_store_{
+	int fpoffset;
 	char name[ID_MAX_LEN];	//变量名
 	addr_list_node *list;
+	struct var_store_ *next;
 } var_store;
+
+reg_store regs[20];
+var_store *vars;
 //------------------------以上选择寄存器相关------------------------
 
 // 机器代码存储
@@ -122,7 +126,7 @@ char *get_reg(char *var);
 // 找到一个空的寄存器，然后返回这个寄存器
 // 然后返回这个寄存器
 char *find_reg();
-// 这个函数获取一个变量在内存里的地址（相对于fp的偏移）
+// 这个函数获取一个变量在内存里的地址（相对于fp的偏移）,把这个地址放到一个寄存器里，然后返回这个寄存器
 char *get_addr(char *var);
 // 这个函数初始化所有的寄存器
 void init_regs();
@@ -134,11 +138,21 @@ void add_var(char *var, int size);
 void add_arg(char *reg);
 // 读出一个arg
 void get_arg(char *reg);
+
+// 检查变量存储，变量是否存在
+bool is_var_exist(char *var);
+// 将寄存器reg加到var的寄存器列表里
+void add_var_reg(var_store *var, char *reg);
+// 新建一个var
+var_store *new_var();
+// 将var加到reg的变量列表里
+void add_reg_var(char *reg, char *var);
 //---------------以上寄存器对应的函数---------------------
 
 // 这个函数把生成的机器指令写入.s文件
 void store_exe_code(char *filename);
 exe_code *new_ecode(base_block *block);
+void init_all_var();
 void init_ecode();
 void init_generate();
 //---------------以上文件写入和展示对应的函数------------------

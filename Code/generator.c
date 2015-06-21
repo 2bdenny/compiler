@@ -1,6 +1,7 @@
 #include "generator.h"
 #include "GrammarTree.h"
 
+int arg_count = 0;
 void init_block(){
 	blocks = NULL;
 	block_tail = NULL;
@@ -116,14 +117,89 @@ void part_base_block(){
 
 
 void init_regs(){
+//	memset(regs, 0, 32*sizeof(reg_store));
+	int i;
+	for (i = 0; i < 20; i++){
+		regs[i].list = NULL;
+		memset(regs[i].name, 0, ID_MAX_LEN);
+	}
+
+	memcpy(regs[0].name, "$v1", 3);
+
+	memcpy(regs[1].name, "$t0", 3);
+	memcpy(regs[2].name, "$t1", 3);
+	memcpy(regs[3].name, "$t2", 3);
+	memcpy(regs[4].name, "$t3", 3);
+	memcpy(regs[5].name, "$t4", 3);
+	memcpy(regs[6].name, "$t5", 3);
+	memcpy(regs[7].name, "$t6", 3);
+	memcpy(regs[8].name, "$t7", 3);
+
+	memcpy(regs[9].name, "$s0", 3);
+	memcpy(regs[10].name, "$s1", 3);
+	memcpy(regs[11].name, "$s2", 3);
+	memcpy(regs[12].name, "$s3", 3);
+	memcpy(regs[13].name, "$s4", 3);
+	memcpy(regs[14].name, "$s5", 3);
+	memcpy(regs[15].name, "$s6", 3);
+	memcpy(regs[16].name, "$s7", 3);
+	memcpy(regs[17].name, "$s8", 3);
+
+	memcpy(regs[18].name, "$t8", 3);
+	memcpy(regs[19].name, "$t9", 3);
 }
 void init_vars(){
+	vars = NULL;
 }
 void add_var(char *var, int size){
+	if (var[0] == '&') var = var+1;
+	if (!is_var_exist(var)){
+		var_store *tmp = (var_store *)malloc(sizeof(var_store));
+		memset(tmp->name, 0, ID_MAX_LEN);
+		tmp->list = NULL;
+		tmp->next = NULL;
+		memcpy(tmp->name, var, strlen(var));
+		if (vars == NULL) vars = tmp;
+		else {
+			tmp->next = vars;
+			vars = tmp;
+		}
+	}
 }
 void add_arg(char *reg){
+	printf("\t\t\tadd_arg %s\n", reg);
+/*	if (arg_count < 4){
+		exe_code *tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\tmove $a%d, %s\n", arg_count, reg);
+	}
+	else {*/
+		exe_code *tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\tmove $sp, %s\n", reg);
+		tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
+//	}
+//	arg_count ++;
 }
 void get_arg(char *reg){
+//	if (arg_count >= 4){
+		exe_code *tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\tmove %s, $sp\n", reg);
+		tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
+//	}
+/*	else {
+		exe_code *tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\tmove %s, $a%d\n", reg, arg_count);
+	}
+	arg_count --;*/
+}
+bool is_var_exist(char *var){
+	var_store *trace = vars;
+	while (trace != NULL){
+		if (memcmp(trace->name, var, min(strlen(var), strlen(trace->name))) == 0) return true;
+		trace = trace->next;
+	}
+	return false;
 }
 char *get_word(char *sentence, int n){
 	char *result = NULL;
@@ -186,7 +262,8 @@ void generate_block(base_block *block){
 	int i;
 	Midcode *trace = block->start;
 	for (i = 0; i < block->count; i++){
-		if (trace == NULL) {
+		printf("%s\n", trace->sentence);
+		if (trace == NULL){ 
 			printf("error: generate code trace=NULL\n");
 		}
 
@@ -1033,31 +1110,31 @@ void generate_block(base_block *block){
 				char *reg1 = get_reg(var1+1);
 				char *regt1 = find_reg();
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "lw %s, 0(%s)\n", regt1, reg1);
+				sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, reg1);
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "move $v0, %s\n", regt1);
+				sprintf(tmp->sentence, "\tmove $v0, %s\n", regt1);
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "jr $ra\n");
+				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
 			else if (var1[0] == '&'){
 				char *addr1 = get_addr(var1+1);
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "move $v0, %s\n", addr1);
+				sprintf(tmp->sentence, "\tmove $v0, %s\n", addr1);
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "jr $ra\n");
+				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
 			else if (var1[0] == '#'){
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "li $v0, %s\n", var1+1);
+				sprintf(tmp->sentence, "\tli $v0, %s\n", var1+1);
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "jr $ra\n");
+				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
 			else {
 				char *reg1 = get_reg(var1);
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "move $v0, %s\n", reg1);
+				sprintf(tmp->sentence, "\tmove $v0, %s\n", reg1);
 				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "jr $ra\n");
+				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
 		}
 		else if (isDEC(trace)){
@@ -1069,11 +1146,12 @@ void generate_block(base_block *block){
 		}
 		else if (isARG(trace)){
 			char *var1 = get_word(trace->sentence, 1);
+			printf("\t\t\t\t arg %s\n", var1);
 			if (var1[0] == '*'){
 				char *reg1 = get_reg(var1+1);
 				char *regt1 = find_reg();
 				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "lw %s, 0(%s)\n", regt1, reg1);
+				sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, reg1);
 				tmp = new_ecode(block);
 				add_arg(regt1);
 			}
@@ -1084,33 +1162,36 @@ void generate_block(base_block *block){
 			else if (var1[0] == '#'){
 				char *regt1 = find_reg();
 				exe_code *tmp = new_ecode(block);
-				sprintf("li %s, %s\n", regt1, var1+1);
+				sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var1+1);
 				add_arg(regt1);
 			}
 			else {
 				char *reg1 = get_reg(var1);
-				add_arg(reg1);
+				char *regt1 = find_reg();
+				exe_code *tmp = new_ecode(block);
+				sprintf(tmp->sentence, "\tmove %s, %s\n", regt1, reg1);
+				add_arg(regt1);
 			}
 		}
 		else if (isCALL(trace)){
 			char *label = get_word(trace->sentence, 3);
 			char *var1 = get_word(trace->sentence, 0);
 			exe_code *tmp = new_ecode(block);
-			sprintf(tmp->sentence, "addi $sp, $sp, -4\n");
+			sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
 			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "sw $ra, 0($sp)\n");
+			sprintf(tmp->sentence, "\tsw $ra, 0($sp)\n");
 			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "jal %s\n", label);
+			sprintf(tmp->sentence, "\tjal %s\n", label);
 			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "addi $sp, $sp, 4\n");
+			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 			tmp = new_ecode(block);
 			if (var1[0] == '*'){
 				char *reg1 = get_reg(var1+1);
-				sprintf(tmp->sentence, "sw $v0, 0(%s)\n", reg1);
+				sprintf(tmp->sentence, "\tsw $v0, 0(%s)\n", reg1);
 			}
 			else {
 				char *reg1 = get_reg(var1);
-				sprintf(tmp->sentence, "move %s, $v0\n", reg1);
+				sprintf(tmp->sentence, "\tmove %s, $v0\n", reg1);
 			}
 		}
 		else if (isPARAM(trace)){
@@ -1282,6 +1363,9 @@ void init_generate(){
 	sprintf(tmp->sentence, "_ret: .asciiz \"\\n\"\n");
 	tmp = new_ecode(NULL);
 	sprintf(tmp->sentence, ".globl main\n");
+
+//	init_all_var();
+
 	tmp = new_ecode(NULL);
 	sprintf(tmp->sentence, ".text\n");
 	tmp = new_ecode(NULL);
@@ -1321,18 +1405,197 @@ void init_generate(){
 
 char *get_reg(char *var){
 	char *result = (char *)malloc(ID_MAX_LEN);
-	memcpy(result, "reg", 3);
+	memset(result, 0, ID_MAX_LEN);
+	int i;
+	var_store *trace = vars;
+	while (trace != NULL){
+		if (memcmp(trace->name, var, min(strlen(var), strlen(trace->name))) == 0) break;
+		trace = trace->next;
+	}
+	// var is exist
+	if (trace != NULL){
+		if (trace->list != NULL){
+			memcpy(result, trace->list->addr, strlen(trace->list->addr));
+		}
+		else {	// var is exist but not in register
+			char *reg = find_reg();
+			memcpy(result, reg, strlen(reg));
+			add_var_reg(trace, reg);
+			add_reg_var(reg, var);
+		}
+	}
+	else {// var not exist
+		var_store *tmp = new_var();	// new var
+		memcpy(tmp->name, var, strlen(var));
+		char *reg = find_reg();		// new reg
+		memcpy(result, reg, strlen(reg));
+		add_var_reg(tmp, reg);
+		add_reg_var(reg, var);
+	}
 	return result;
 }
 
 char *find_reg(){
 	char *result = (char *)malloc(ID_MAX_LEN);
-	memcpy(result, "reg", 3);
-	return result;
+	memset(result, 0, ID_MAX_LEN);
+	int i;
+	for (i = 0; i < 20; i ++){
+		if (regs[i].list == NULL){
+			memcpy(result, regs[i].name, strlen(regs[i].name));
+			return result;
+		}
+	}
+	return "regnotfind";
 }
 
 char *get_addr(char *var){
-	char *result = (char *)malloc(ID_MAX_LEN);
-	memcpy(result, "reg", 3);
-	return result;
+	if (var[0] == '&') var = var+1;
+	if (!is_var_exist(var))
+		add_var(var, 4);
+
+	var_store *trace = vars;
+	while (trace != NULL){
+		int cmplen = strlen(var);
+		if (var[cmplen-1] == '\n') cmplen--;
+		if (memcmp(var, trace->name, cmplen) == 0) break;
+		trace = trace->next;
+	}
+	char *regt = find_reg();
+	exe_code *tmp = new_ecode(NULL);
+	sprintf(tmp->sentence, "\taddi %s, $fp, %d\n", regt, trace->fpoffset);
+/*	tmp = new_ecode(NULL);
+	sprintf(tmp->sentence, "\tla %s, %s\n", regt, regt);*/
+	return regt;
+}
+
+void add_var_reg(var_store *var, char *reg){
+	addr_list_node *node = (addr_list_node *)malloc(sizeof(addr_list_node));
+	memset(node, 0, sizeof(addr_list_node));
+	memcpy(node->addr, reg, strlen(reg));
+	node->next = var->list;
+	var->list = node;
+}
+void add_reg_var(char *reg, char *var){
+	int i;
+	for (i = 0; i < 20; i ++){
+		if (memcmp(regs[i].name, reg, strlen(reg)) == 0)
+			break;
+	}
+	if (i < 20){
+		var_list_node *tmp = (var_list_node *)malloc(sizeof(var_list_node));
+		memset(tmp, 0, sizeof(var_list_node));
+		memcpy(tmp->name, var, strlen(var));
+		tmp->next = regs[i].list;
+		regs[i].list = tmp;
+	}
+	else {
+		printf("error reg %s\n", reg);
+	}
+}
+
+var_store *new_var(){
+	var_store *tmp = (var_store *)malloc(sizeof(var_store));
+	memset(tmp, 0, sizeof(var_store));
+	if (vars == NULL){
+		vars = tmp;
+	}
+	else {
+		tmp->next = vars;
+		vars = tmp;
+	}
+	return tmp;
+}
+
+void init_all_var(){
+	Midcode *trace = codes;
+	while (trace != NULL){
+		int i;
+		if (isLABEL(trace)){
+		}
+		else if (isGOTO(trace)){
+		}
+		else if (isIF(trace)){
+		}
+		else if (isRETURN(trace)){
+		}
+		else if (isFUNCTION(trace)){
+		}
+		else if (isASSIGN(trace)){
+			char *var1 = get_word(trace->sentence, 0);
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
+				if (!is_var_exist(var1)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var1);
+					add_var(var1, 4);
+				}
+			}
+		}
+		else if (isPLUS(trace)){
+			char *var1 = get_word(trace->sentence, 0);
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
+				if (!is_var_exist(var1)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var1);
+					add_var(var1, 4);
+				}
+			}
+		}
+		else if (isMINUS(trace)){
+			char *var1 = get_word(trace->sentence, 0);
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
+				if (!is_var_exist(var1)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var1);
+					add_var(var1, 4);
+				}
+			}
+		}
+		else if (isSTAR(trace)){
+			char *var1 = get_word(trace->sentence, 0);
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
+				if (!is_var_exist(var1)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var1);
+					add_var(var1, 4);
+				}
+			}
+		}
+		else if (isDIV(trace)){
+			char *var1 = get_word(trace->sentence, 0);
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
+				if (!is_var_exist(var1)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var1);
+					add_var(var1, 4);
+				}
+			}
+		}
+		else if (isDEC(trace)){
+			char var1[ID_MAX_LEN];
+			int size;
+			memset(var1, 0, ID_MAX_LEN);
+			sscanf(trace->sentence, "DEC %s %d", var1, &size);
+			exe_code *tmp = new_ecode(NULL);
+			sprintf(tmp->sentence, "%s: .space %d\n", var1, size);
+			add_var(var1, 4);
+		}
+		else if (isARG(trace)){
+		}
+		else if (isCALL(trace)){
+		}
+		else if (isPARAM(trace)){
+		}
+		else if (isREAD(trace)){
+			char *var1 = get_word(trace->sentence, 0);
+			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
+				if (!is_var_exist(var1)){
+					exe_code *tmp = new_ecode(NULL);
+					sprintf(tmp->sentence, "%s: .word 0\n", var1);
+					add_var(var1, 4);
+				}
+			}
+		}
+		else if (isWRITE(trace)){
+		}
+	}
 }

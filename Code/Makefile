@@ -45,3 +45,6 @@ clean:
 	rm -f *~
 	rm -f *.txt
 	rm -f *.ir
+	rm -f *.s
+	rm -f ../Test/*.ir
+	rm -f ../Test/*.s
