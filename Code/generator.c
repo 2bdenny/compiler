@@ -195,7 +195,7 @@ void get_arg(char *reg){
 bool is_var_exist(char *var){
 	var_store *trace = vars;
 	while (trace != NULL){
-		if (memcmp(trace->name, var, min(strlen(var), strlen(trace->name))) == 0) return true;
+		if (memcmp(trace->name, var, max(strlen(var), strlen(trace->name))) == 0) return true;
 		trace = trace->next;
 	}
 	return false;
@@ -1862,6 +1862,7 @@ void init_all_var(){
 			if (var1[strlen(var1)-1] == '\n') var1[strlen(var1)-1] = 0;
 			if (var1[0] != '*' && var1[0] != '#' && var1[0] != '&'){
 				if (!is_var_exist(var1)){
+//			printf(":= var1=%s\n", var1);
 					exe_code *tmp = new_ecode(NULL);
 					sprintf(tmp->sentence, "%s: .word 0\n", var1);
 					add_var(var1, 4);
