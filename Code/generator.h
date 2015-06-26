@@ -16,34 +16,22 @@ base_block *blocks;
 base_block *block_tail;
 //------------------------以上基本块相关----------------------------
 
-// 一个寄存器里保存的变量名的列表里的一个变量
-typedef struct reg_var_list_node_ {
-	char name[ID_MAX_LEN];	//变量名
-	struct reg_var_list_node_ *next;
-} var_list_node;
-
 // 寄存器存储定义
 typedef struct reg_store_{
 	char name[ID_MAX_LEN];	// 寄存器名
-	var_list_node *list;
+	bool is_used;
 } reg_store;
-
-// 一个变量存储的所有位置的一个位置
-typedef struct var_addr_list_node_ {
-	char addr[ID_MAX_LEN];	//存储位置
-	struct var_addr_list_node_ *next;
-} addr_list_node;
 
 // 一个变量的存储位置的定义
 typedef struct var_store_{
 	int fpoffset;
 	char name[ID_MAX_LEN];	//变量名
-	addr_list_node *list;
 	struct var_store_ *next;
 } var_store;
 
-reg_store regs[20];
-var_store *vars;
+reg_store regs[20];	//存寄存器
+var_store *vars;	//存变量
+var_store *paras;	//存参数
 //------------------------以上选择寄存器相关------------------------
 
 // 机器代码存储
@@ -123,32 +111,42 @@ bool isWRITE(Midcode *code);	// write函数调用
 //---------------以上基本块对应的函数---------------------
 
 // 找到变量var现在保存在哪个寄存器，如果没有就调用find_reg找到一个新的寄存器给var
-char *get_reg(char *var);
+//char *get_reg(char *var);
 // 找到一个空的寄存器，然后返回这个寄存器
 // 然后返回这个寄存器
 char *find_reg();
 // 这个函数获取一个变量在内存里的地址（相对于fp的偏移）,把这个地址放到一个寄存器里，然后返回这个寄存器
-char *get_addr(char *var);
+//char *get_addr(char *var);
 // 这个函数初始化所有的寄存器
 void init_regs();
-// 这个函数初始化所有的全局变量
-void init_vars();
-// 这个函数增加一个全局变量
-void add_var(char *var, int size);
-// 增加一个arg
-void add_arg(char *reg);
-// 读出一个arg
+// 这个函数初始化变量列表和参数列表
+void init_list();
+
+// 如果变量已经存在，返回相对于$fp的偏移
+// 如果不存在，往栈里增加一个变量，增加这个变量到变量里列表里，然后返回这个变量相当于$fp的偏移
+int get_var(char *var);
+
+// 只是增加var到参数列表里
+void add_arg(var_store *var);
+
+// 从栈顶退出一个变量，这个变量就是当前想要的arg
+// 把这个变量赋值给当前设置的arg变量，然后把arg存到变量列表里
+// lw $reg, 0($sp)
+// addi $sp, $sp, 4
+// sw $reg, offset($fp)
 void get_arg(char *reg);
 
-// 检查变量存储，变量是否存在
+// 从vars根据变量名获取offset
+int get_offset(char *var);
+
+// 从vars检查变量存储，变量是否存在
 bool is_var_exist(char *var);
-// 将寄存器reg加到var的寄存器列表里
-void add_var_reg(var_store *var, char *reg);
+
 // 新建一个var
 var_store *new_var();
-// 将var加到reg的变量列表里
-void add_reg_var(char *reg, char *var);
 
+// 清空变量列表和参数列表
+void clear_list();
 //---------------以上寄存器对应的函数---------------------
 
 // 这个函数把生成的机器指令写入.s文件
