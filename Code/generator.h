@@ -30,8 +30,10 @@ typedef struct var_store_{
 } var_store;
 
 reg_store regs[20];	//存寄存器
+int stack_size;		//栈里的变量个数，当get var的时候可能增加
 var_store *vars;	//存变量
 var_store *paras;	//存参数
+var_store *para_tail;
 //------------------------以上选择寄存器相关------------------------
 
 // 机器代码存储
@@ -125,9 +127,11 @@ void init_list();
 // 如果变量已经存在，返回相对于$fp的偏移
 // 如果不存在，往栈里增加一个变量，增加这个变量到变量里列表里，然后返回这个变量相当于$fp的偏移
 int get_var(char *var);
+// dec 了一个数组
+int get_array(char *var, int size);
 
 // 只是增加var到参数列表里
-void add_arg(var_store *var);
+void add_arg(char *var);
 
 // 从栈顶退出一个变量，这个变量就是当前想要的arg
 // 把这个变量赋值给当前设置的arg变量，然后把arg存到变量列表里
@@ -145,7 +149,7 @@ bool is_var_exist(char *var);
 // 新建一个var
 var_store *new_var();
 
-// 清空变量列表和参数列表
+// 清空变量列表和参数列表，初始化参数列表，退栈
 void clear_list();
 //---------------以上寄存器对应的函数---------------------
 
