@@ -64,7 +64,7 @@ int get_array(char *var, int size){
 	}
 	else {
 		exe_code *tcode = new_ecode(NULL);
-		sprintf(tcode->sentence, "\taddi $sp, $sp, %d\n", (-1)*size);
+		sprintf(tcode->sentence, "\taddi $sp, $sp, %d\n", (-4)*size);
 		var_store *tmp = new_var();
 		tmp->fpoffset = (-4) * stack_size;
 		stack_size += size;
@@ -85,6 +85,24 @@ void push_args(){
 		tmp = new_ecode(NULL);
 		sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
 
+		stack_size ++;
+		trace = trace->next;
+	}
+//	paras = NULL;
+//	para_tail = NULL;
+}
+void pop_args(){
+	var_store *trace = paras;
+	while (trace != NULL){
+//		char *regt = find_reg();
+		exe_code *tmp = new_ecode(NULL);
+		sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
+		tmp = new_ecode(NULL);
+//		sprintf(tmp->sentence, "\tsw %s, 0($sp)\n", regt);
+//		tmp = new_ecode(NULL);
+//		sprintf(tmp->sentence, "\taddi $sp, $sp, -4\n");
+
+		stack_size --;
 		trace = trace->next;
 	}
 	paras = NULL;
@@ -207,12 +225,15 @@ void init_regs(){
 	memcpy(regs[19].name, "$t9", 3);
 }
 void init_list(){
+	para_offset = 4;
+	stack_size = 0;
 	vars = NULL;	//变量列表
 	paras = NULL;	//参数列表
 	para_tail = NULL;
 }
 // insert from tail
 void add_arg(char *var){
+//	printf("add arg %s\n", var);
 	if (paras == NULL){
 		if (var[0] == '*'){	// arg *x
 			int offset1 = get_var(var+1);
@@ -392,6 +413,7 @@ void generate_block(base_block *block){
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "move $fp, $sp\n");
 			}
+			clear_list();
 		}
 		else if (isASSIGN(trace)){	// :=
 			char *var1 = get_word(trace->sentence, 0);
@@ -430,8 +452,8 @@ void generate_block(base_block *block){
 					exe_code *tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\taddi %s, $fp, %d\n", regt2, offset2);
 					tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tla %s, %s\n", regt2, regt2);
-					tmp = new_ecode(block);
+//					sprintf(tmp->sentence, "\tla %s, %s\n", regt2, regt2);
+//					tmp = new_ecode(block)//;
 					sprintf(tmp->sentence, "\tlw %s, %d($fp)\n", regt1, offset1);
 					tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tsw %s, 0(%s)\n", regt2, regt1);
@@ -469,15 +491,15 @@ void generate_block(base_block *block){
 					tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tsw %s, %d($fp)\n", regt2, offset1);
 				}
-				else if (var2[2] == '&'){	// x = &y
+				else if (var2[0] == '&'){	// x = &y
 					int offset1 = get_var(var1);
 					int offset2 = get_var(var2+1);
 					char *regt2 = find_reg();
 					exe_code *tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\taddi %s, $fp, %d\n", regt2, offset2);
 					tmp = new_ecode(block);
-					sprintf(tmp->sentence, "\tla %s, %s\n", regt2, regt2);
-					tmp = new_ecode(block);
+//					sprintf(tmp->sentence, "\tla %s, %s\n", regt2, regt2);
+//					tmp = new_ecode(block);
 					sprintf(tmp->sentence, "\tsw %s, %d($fp)\n", regt2, offset1);
 				}
 				else {	// x = y
@@ -1597,7 +1619,11 @@ void generate_block(base_block *block){
 				sprintf(tmp->sentence, "\tmove $v0, %s\n", regt1);
 
 				// pop var of this function & clear vars & paras & reset regs
-				clear_list();
+//				clear_list();
+				if (stack_size > 0) {
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "addi $sp, $sp, %d\n", 4*stack_size);
+				}
 
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjr $ra\n");
@@ -1607,7 +1633,11 @@ void generate_block(base_block *block){
 				exe_code *tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\taddi $v0, $fp, %d\n", offset1);
 
-				clear_list();
+//				clear_list();
+				if (stack_size > 0) {
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "addi $sp, $sp, %d\n", 4*stack_size);
+				}
 
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjr $ra\n");
@@ -1615,7 +1645,11 @@ void generate_block(base_block *block){
 			else if (var1[0] == '#'){// return #x
 				exe_code *tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tli $v0, %s\n", var1+1);
-				clear_list();
+//				clear_list();
+				if (stack_size > 0) {
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "addi $sp, $sp, %d\n", 4*stack_size);
+				}
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
@@ -1623,7 +1657,11 @@ void generate_block(base_block *block){
 				int offset1 = get_var(var1);
 				exe_code *tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tlw $v0, %d($fp)\n", offset1);
-				clear_list();
+//				clear_list();
+				if (stack_size > 0) {
+					tmp = new_ecode(block);
+					sprintf(tmp->sentence, "addi $sp, $sp, %d\n", 4*stack_size);
+				}
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjr $ra\n");
 			}
@@ -1638,39 +1676,19 @@ void generate_block(base_block *block){
 		}
 		else if (isARG(trace)){
 			char *var1 = get_word(trace->sentence, 1);
-//			add_arg(var1);
 			if (var1[0] == '*'){	// arg *x
 				int offset1 = get_var(var1+1);
-/*				char *regt1 = find_reg();
-				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tlw %s, %d($fp)\n", regt1, offset1);
-				tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tlw %s, 0(%s)\n", regt1, regt1);
-				tmp = new_ecode(block);*/
-
 				add_arg(var1);
 			}
 			else if (var1[0] == '&'){//arg &x
 				int offset1 = get_var(var1+1);
-/*				char *regt1 = find_reg();
-				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\taddi %s, $fp, %d\n", regt1, offset1);
-*/
 				add_arg(var1);
 			}
 			else if (var1[0] == '#'){//arg #x
-/*				char *regt1 = find_reg();
-				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tli %s, %s\n", regt1, var1+1);
-*/
 				add_arg(var1);
 			}
 			else {//arg x
 				int offset1 = get_var(var1);
-/*				char *regt1 = find_reg();
-				exe_code *tmp = new_ecode(block);
-				sprintf(tmp->sentence, "\tlw %s, %d($fp)\n", regt1, offset1);
-*/
 				add_arg(var1);
 			}
 		}
@@ -1695,24 +1713,28 @@ void generate_block(base_block *block){
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\tjal %s\n", label);
 			tmp = new_ecode(block);
+
+			pop_args();
+
 			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\tlw $ra, 0($fp)\n");
+			sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\tlw $fp, 0($sp)\n");
-			tmp = new_ecode(block);
 
 			if (var1[0] == '*'){//*x = call f
 				int offset1 = get_var(var1);
 				char *regt1 = find_reg();
+				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tlw %s, %d($fp)\n", regt1, offset1);
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tsw $v0, 0(%s)\n", regt1);
 			}
 			else {//x=call f
 				int offset1 = get_var(var1);
+				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tsw $v0, %d($fp)\n", offset1);
 			}
 		}
@@ -1722,11 +1744,12 @@ void generate_block(base_block *block){
 
 			char *regt = find_reg();
 			exe_code *tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
-			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\tmove $fp, $sp\n");
-			tmp = new_ecode(block);
-			sprintf(tmp->sentence, "\tlw %s, 0($sp)\n", regt);
+//			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
+//			tmp = new_ecode(block);
+//			sprintf(tmp->sentence, "\tmove $fp, $sp\n");
+//			tmp = new_ecode(block);
+			sprintf(tmp->sentence, "\tlw %s, %d($fp)\n", regt, para_offset);
+			para_offset += 4;
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\tsw %s, %d($fp)\n", regt, offset1);
 		}
@@ -1746,6 +1769,10 @@ void generate_block(base_block *block){
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\tjal read\n");
 			tmp = new_ecode(block);
+
+//			pop_args();
+			paras = NULL;
+
 			sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 			tmp = new_ecode(block);
 			sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
@@ -1791,6 +1818,9 @@ void generate_block(base_block *block){
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjal write\n");
 				tmp = new_ecode(block);
+			//	pop_args();
+				paras = NULL;
+
 				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tlw $ra, 0($sp)\n");
@@ -1815,6 +1845,8 @@ void generate_block(base_block *block){
 				sprintf(tmp->sentence, "\tmove $fp, $sp\n");
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjal write\n");
+//			pop_args();
+				paras = NULL;
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 				tmp = new_ecode(block);
@@ -1841,6 +1873,8 @@ void generate_block(base_block *block){
 				sprintf(tmp->sentence, "\tmove $fp, $sp\n");
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjal write\n");
+//			pop_args();
+				paras = NULL;
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 				tmp = new_ecode(block);
@@ -1867,6 +1901,8 @@ void generate_block(base_block *block){
 				sprintf(tmp->sentence, "\tmove $fp, $sp\n");
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\tjal write\n");
+//			pop_args();
+				paras = NULL;
 				tmp = new_ecode(block);
 				sprintf(tmp->sentence, "\taddi $sp, $sp, 4\n");
 				tmp = new_ecode(block);
@@ -2076,12 +2112,13 @@ var_store *new_var(){
 	return tmp;
 }
 void clear_list(){
-	exe_code *tmp = new_ecode(NULL);
+/*	exe_code *tmp = new_ecode(NULL);
 	if (stack_size > 0){
 		sprintf(tmp->sentence, "\taddi $sp, $sp, %d\n", (4)*stack_size);
 		stack_size = 0;
 	}
-	else stack_size = 0;
+	else */stack_size = 0;
+	para_offset = 4;
 	vars = NULL;
 	paras = NULL;
 	para_tail = NULL;

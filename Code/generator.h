@@ -31,6 +31,7 @@ typedef struct var_store_{
 
 reg_store regs[20];	//存寄存器
 int stack_size;		//栈里的变量个数，当get var的时候可能增加
+int para_offset;
 var_store *vars;	//存变量
 var_store *paras;	//存参数
 var_store *para_tail;
