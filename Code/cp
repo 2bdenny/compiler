@@ -1,0 +1,82 @@
+{$$ = reduce1(@$.first_line, "Program", $1);}	/*High-level Definitions*/
+                                                                                 
+{$$ = reduce0(@$.first_line, "ExtDefList");}
+{$$ = reduce2(@$.first_line, "ExtDefList", $1, $2);}	
+                                                                                 
+{$$ = reduce3(@$.first_line, "ExtDef", $1, $2, $3);}
+{$$ = reduce2(@$.first_line, "ExtDef", $1, $2);}
+{$$ = reduce3(@$.first_line, "ExtDef", $1, $2, $3);}
+                                                                                 
+{$$ = reduce1(@$.first_line, "ExtDecList", $1);}
+{$$ = reduce3(@$.first_line, "ExtDecList", $1, $2, $3);}
+                                                                                 
+                                                                                 
+{$$ = reduce1(@$.first_line, "Specifier", $1);}		/*Specifiers*/
+{$$ = reduce1(@$.first_line, "Specifier", $1);}
+                                                                                 
+{$$ = reduce4(@$.first_line, "StructSpecifier", $1, $2, $3, $4);}
+{$$ = reduce2(@$.first_line, "StructSpecifier", $1, $2);}
+                                                                                 
+{$$ = reduce0(@$.first_line, "OptTag");}
+{$$ = reduce1(@$.first_line, "OptTag", $1);}
+                                                                                 
+{$$ = reduce1(@$.first_line, "Tag", $1);}
+                                                                                 
+                                                                                 
+{$$ = reduce1(@$.first_line, "VarDec", $1);}	/*Declarators*/
+{$$ = reduce4(@$.first_line, "VarDec", $1, $2, $3, $4);}
+                                                                                 
+{$$ = reduce4(@$.first_line, "FunDec", $1, $2, $3, $4);}
+{$$ = reduce3(@$.first_line, "FunDec", $1, $2, $3);}
+                                                                                 
+{$$ = reduce3(@$.first_line, "VarList", $1, $2, $3);}
+{$$ = reduce1(@$.first_line, "ParamDec", $1);}
+                                                                                 
+{$$ = reduce2(@$.first_line, "ParamDec", $1, $2);}
+                                                                                 
+                                                                                 
+{$$ = reduce4(@$.first_line, "ComptSt", $1, $2, $3, $4);}/*Statements*/
+                                                                                 
+{$$ = reduce0(@$.first_line, "StmtList");}
+{$$ = reduce2(@$.first_line, "StmtList", $1, $2);}
+                                                                                 
+{$$ = reduce2(@$.first_line, "Stmt", $1, $2);}
+{$$ = reduce1(@$.first_line, "Stmt", $1);}
+{$$ = reduce3(@$.first_line, "Stmt", $1, $2, $3);}
+{$$ = reduce5(@$.first_line, "Stmt", $1, $2, $3, $4, $5);}%prec LOWER_THAN_ELSE	
+{$$ = reduce6(@$.first_line, "Stmt", $1, $2, $3, $4, $5, $6);}
+{$$ = reduce5(@$.first_line, "Stmt", $1, $2, $3, $4, $5);}
+                                                                                 
+                                                                                 
+{$$ = reduce0(@$.first_line, "DefList");}	/*Local Definitions*/
+{$$ = reduce2(@$.first_line, "DefList", $1, $2);}
+                                                                                 
+{$$ = reduce3(@$.first_line, "Def", $1, $2, $3);}
+                                                                                 
+{$$ = reduce1(@$.first_line, "DecList", $1);}
+{$$ = reduce3(@$.first_line, "DecList", $1, $2, $3);}
+                                                                                 
+{$$ = reduce1(@$.first_line, "Dec", $1);}
+{$$ = reduce3(@$.first_line, "Dec", $1, $2, $3);}
+                                                                                 
+                                                                                 
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}/*Expressions*/
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}	
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce2(@$.first_line, "Exp", $1, $2);}
+{$$ = reduce2(@$.first_line, "Exp", $1, $2);}
+{$$ = reduce4(@$.first_line, "Exp", $1, $2, $3, $4);}
+{$$ = reduce4(@$.first_line, "Exp", $1, $2, $3, $4);}
+{$$ = reduce3(@$.first_line, "Exp", $1, $2, $3);}
+{$$ = reduce1(@$.first_line, "Exp", $1);}
+{$$ = reduce1(@$.first_line, "Exp", $1);}
+{$$ = reduce1(@$.first_line, "Exp", $1);}
+                                                                                 
+{$$ = reduce3(@$.first_line, "Args", $1, $2, $3);}
+{$$ = reduce1(@$.first_line, "Args", $1);}
